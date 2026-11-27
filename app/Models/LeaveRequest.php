@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\LeaveStatus;
+use App\Models\Concerns\Auditable;
 use Carbon\CarbonInterface;
 use Carbon\CarbonPeriod;
 use Database\Factories\LeaveRequestFactory;
@@ -21,7 +22,7 @@ use Illuminate\Support\Carbon;
 class LeaveRequest extends Model
 {
     /** @use HasFactory<LeaveRequestFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     /**
      * @return array<string, string>
@@ -73,6 +74,14 @@ class LeaveRequest extends Model
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function auditLabel(): string
+    {
+        return __(':type for :name', [
+            'type' => $this->leaveType?->name ?? __('Leave'),
+            'name' => $this->employee?->name ?? '#' . $this->employee_id,
+        ]);
     }
 
     public function isPending(): bool

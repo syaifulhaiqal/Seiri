@@ -19,7 +19,7 @@
         <div class="auth-card">
             <div class="text-center mb-4">
                 <a href="{{ route('home') }}" class="auth-brand">
-                    <span class="brand-mark"><i class="bi bi-shield-lock"></i></span>
+                    <span class="brand-mark"><i class="bi bi-buildings"></i></span>
                     {{ config('app.name') }}
                 </a>
             </div>

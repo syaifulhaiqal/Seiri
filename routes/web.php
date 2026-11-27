@@ -46,6 +46,14 @@ foreach (['web' => '', 'admin' => 'admin'] as $guard => $area) {
                 Route::get('attendance', [Controllers\AttendanceController::class, 'index'])->name('attendance.index');
                 Route::post('attendance/clock-in', [Controllers\AttendanceController::class, 'clockIn'])->name('attendance.clock_in');
                 Route::post('attendance/clock-out', [Controllers\AttendanceController::class, 'clockOut'])->name('attendance.clock_out');
+
+                Route::get('payslips', [Controllers\PayslipController::class, 'index'])->name('payslips.index');
+                Route::get('payslips/{payslip}', [Controllers\PayslipController::class, 'show'])->name('payslips.show');
+
+                Route::get('claims', [Controllers\ClaimController::class, 'index'])->name('claims.index');
+                Route::post('claims', [Controllers\ClaimController::class, 'store'])->name('claims.store');
+                Route::put('claims/{claim}/cancel', [Controllers\ClaimController::class, 'cancel'])->name('claims.cancel');
+                Route::get('claims/{claim}/receipt', [Controllers\ClaimController::class, 'receipt'])->name('claims.receipt');
             }
 
             if ($guard === 'admin') {
@@ -62,6 +70,52 @@ foreach (['web' => '', 'admin' => 'admin'] as $guard => $area) {
                     Route::put('leave-requests/{leaveRequest}/review', [Controllers\Admin\LeaveRequestController::class, 'review'])->name('leave_requests.review');
 
                     Route::get('attendance', [Controllers\Admin\AttendanceController::class, 'index'])->name('attendance.index');
+
+                    Route::post('employees/{employee}/pay-items', [Controllers\Admin\PayItemController::class, 'store'])->name('employees.pay_items.store');
+                    Route::delete('employees/{employee}/pay-items/{payItem}', [Controllers\Admin\PayItemController::class, 'destroy'])->name('employees.pay_items.destroy')->scopeBindings();
+
+                    // Payroll
+                    Route::get('payroll', [Controllers\Admin\PayrollRunController::class, 'index'])->name('payroll.index');
+                    Route::post('payroll', [Controllers\Admin\PayrollRunController::class, 'store'])->name('payroll.store');
+                    Route::get('payroll/{payrollRun}', [Controllers\Admin\PayrollRunController::class, 'show'])->name('payroll.show');
+                    Route::delete('payroll/{payrollRun}', [Controllers\Admin\PayrollRunController::class, 'destroy'])->name('payroll.destroy');
+                    Route::post('payroll/{payrollRun}/recalculate', [Controllers\Admin\PayrollRunController::class, 'recalculate'])->name('payroll.recalculate');
+                    Route::post('payroll/{payrollRun}/approve', [Controllers\Admin\PayrollRunController::class, 'approve'])->name('payroll.approve');
+                    Route::post('payroll/{payrollRun}/pay', [Controllers\Admin\PayrollRunController::class, 'pay'])->name('payroll.pay');
+                    Route::get('payroll/{payrollRun}/payslips/{payslip}', [Controllers\Admin\PayrollRunController::class, 'payslip'])->name('payroll.payslip')->scopeBindings();
+
+                    // Finance
+                    Route::prefix('finance')->group(function () {
+                        Route::resource('accounts', Controllers\Admin\AccountController::class)->except('show');
+                        Route::resource('journal', Controllers\Admin\JournalEntryController::class)->only(['index', 'create', 'store', 'show'])
+                            ->names('journal_entries')->parameters(['journal' => 'journalEntry']);
+                        Route::post('journal/{journalEntry}/reverse', [Controllers\Admin\JournalEntryController::class, 'reverse'])->name('journal_entries.reverse');
+
+                        Route::resource('contacts', Controllers\Admin\ContactController::class)->except('show');
+
+                        foreach (['invoices' => Controllers\Admin\InvoiceController::class, 'bills' => Controllers\Admin\BillController::class] as $path => $controller) {
+                            Route::resource($path, $controller)->parameters([$path => 'invoice']);
+                            Route::post("{$path}/{invoice}/issue", [$controller, 'issue'])->name("{$path}.issue");
+                            Route::post("{$path}/{invoice}/payments", [$controller, 'pay'])->name("{$path}.pay");
+                            Route::post("{$path}/{invoice}/void", [$controller, 'void'])->name("{$path}.void");
+                        }
+
+                        Route::get('claims', [Controllers\Admin\ExpenseClaimController::class, 'index'])->name('claims.index');
+                        Route::get('claims/{claim}', [Controllers\Admin\ExpenseClaimController::class, 'show'])->name('claims.show');
+                        Route::put('claims/{claim}/review', [Controllers\Admin\ExpenseClaimController::class, 'review'])->name('claims.review');
+                        Route::post('claims/{claim}/reimburse', [Controllers\Admin\ExpenseClaimController::class, 'reimburse'])->name('claims.reimburse');
+                        Route::get('claims/{claim}/receipt', [Controllers\Admin\ExpenseClaimController::class, 'receipt'])->name('claims.receipt');
+
+                        Route::get('reports/trial-balance', [Controllers\Admin\ReportController::class, 'trialBalance'])->name('reports.trial_balance');
+                        Route::get('reports/profit-and-loss', [Controllers\Admin\ReportController::class, 'profitAndLoss'])->name('reports.profit_and_loss');
+                        Route::get('reports/balance-sheet', [Controllers\Admin\ReportController::class, 'balanceSheet'])->name('reports.balance_sheet');
+                        Route::get('reports/general-ledger', [Controllers\Admin\ReportController::class, 'generalLedger'])->name('reports.general_ledger');
+                    });
+
+                    // Audit
+                    Route::get('audit', [Controllers\Admin\AuditLogController::class, 'index'])->name('audit.index');
+                    Route::get('audit/export', [Controllers\Admin\AuditLogController::class, 'export'])->name('audit.export');
+                    Route::get('audit/{auditLog}', [Controllers\Admin\AuditLogController::class, 'show'])->name('audit.show');
                 });
             }
         });

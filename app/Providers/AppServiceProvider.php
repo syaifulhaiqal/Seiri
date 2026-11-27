@@ -2,14 +2,19 @@
 
 namespace App\Providers;
 
+use App\Models;
 use App\Models\User;
+use App\Support\Money;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -35,6 +40,37 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureVerificationEmail();
         $this->configureAreas();
+        $this->configureAudit();
+
+        // @money($amount) prints "RM 1,234.50".
+        Blade::directive('money', fn (string $expression) => '<?php echo e(\\' . Money::class . "::format({$expression})); ?>");
+    }
+
+    /**
+     * Short, stable names for audited and journal-source models.
+     * (Sign-in logging is App\\Listeners\\RecordAuthenticationEvents, found by event discovery.)
+     */
+    protected function configureAudit(): void
+    {
+        // {claim} in routes means an expense claim.
+        Route::model('claim', Models\ExpenseClaim::class);
+
+        Relation::morphMap([
+            'user' => User::class,
+            'employee' => Models\Employee::class,
+            'department' => Models\Department::class,
+            'leave_type' => Models\LeaveType::class,
+            'leave_request' => Models\LeaveRequest::class,
+            'attendance' => Models\Attendance::class,
+            'pay_item' => Models\PayItem::class,
+            'payroll_run' => Models\PayrollRun::class,
+            'account' => Models\Account::class,
+            'journal_entry' => Models\JournalEntry::class,
+            'contact' => Models\Contact::class,
+            'invoice' => Models\Invoice::class,
+            'payment' => Models\Payment::class,
+            'expense_claim' => Models\ExpenseClaim::class,
+        ]);
     }
 
     /**

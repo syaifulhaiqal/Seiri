@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\User;
+use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -39,7 +40,8 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotRateLimited();
 
         $admin = $this->area() === 'admin.';
-        $guard = Auth::guard($admin ? 'admin' : 'web');
+        $guardName = $admin ? 'admin' : 'web';
+        $guard = Auth::guard($guardName);
 
         $valid = $guard->validate($this->only('email', 'password'));
 
@@ -50,6 +52,10 @@ class LoginRequest extends FormRequest
         // same generic error as a wrong password, so the form never reveals which emails are admins.
         if (! $valid || $user->isAdmin() !== $admin) {
             RateLimiter::hit($this->throttleKey());
+
+            // validate() does not fire Failed the way attempt() does. Fire it here for the audit trail,
+            // without the password.
+            event(new Failed($guardName, $user, ['email' => $this->string('email')->toString()]));
 
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),

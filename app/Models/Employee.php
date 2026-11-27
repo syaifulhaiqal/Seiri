@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EmployeeStatus;
 use App\Enums\EmploymentType;
 use App\Enums\LeaveStatus;
+use App\Models\Concerns\Auditable;
 use Database\Factories\EmployeeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -22,11 +23,12 @@ use Illuminate\Support\Collection;
 #[Fillable([
     'employee_no', 'department_id', 'name', 'email', 'phone_number', 'job_title',
     'employment_type', 'status', 'join_date', 'end_date', 'date_of_birth', 'address',
+    'basic_salary', 'monthly_pcb', 'bank_name', 'bank_account_no',
 ])]
 class Employee extends Model
 {
     /** @use HasFactory<EmployeeFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     /**
      * @return array<string, string>
@@ -39,6 +41,8 @@ class Employee extends Model
             'join_date' => 'date',
             'end_date' => 'date',
             'date_of_birth' => 'date',
+            'basic_salary' => 'decimal:2',
+            'monthly_pcb' => 'decimal:2',
         ];
     }
 
@@ -94,6 +98,35 @@ class Employee extends Model
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class);
+    }
+
+    /**
+     * @return HasMany<PayItem, $this>
+     */
+    public function payItems(): HasMany
+    {
+        return $this->hasMany(PayItem::class)->orderBy('type')->orderBy('name');
+    }
+
+    /**
+     * @return HasMany<Payslip, $this>
+     */
+    public function payslips(): HasMany
+    {
+        return $this->hasMany(Payslip::class);
+    }
+
+    /**
+     * @return HasMany<ExpenseClaim, $this>
+     */
+    public function expenseClaims(): HasMany
+    {
+        return $this->hasMany(ExpenseClaim::class);
+    }
+
+    public function auditLabel(): string
+    {
+        return "{$this->name} ({$this->employee_no})";
     }
 
     public function isActive(): bool

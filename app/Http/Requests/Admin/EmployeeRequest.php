@@ -22,6 +22,17 @@ class EmployeeRequest extends FormRequest
     }
 
     /**
+     * Blank pay fields mean zero.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'basic_salary' => filled($this->input('basic_salary')) ? $this->input('basic_salary') : 0,
+            'monthly_pcb' => filled($this->input('monthly_pcb')) ? $this->input('monthly_pcb') : 0,
+        ]);
+    }
+
+    /**
      * @return array<string, array<int, mixed>>
      */
     public function rules(): array
@@ -45,6 +56,10 @@ class EmployeeRequest extends FormRequest
             ],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'address' => ['nullable', 'string', 'max:500'],
+            'basic_salary' => ['required', 'numeric', 'min:0', 'max:9999999'],
+            'monthly_pcb' => ['required', 'numeric', 'min:0', 'max:999999'],
+            'bank_name' => ['nullable', 'string', 'max:100'],
+            'bank_account_no' => ['nullable', 'string', 'max:30', 'regex:/^[0-9\s\-]+$/'],
             // Only regular user accounts that are not already linked to someone else.
             'user_id' => [
                 'nullable',
@@ -63,6 +78,7 @@ class EmployeeRequest extends FormRequest
             'phone_number.regex' => __('The phone number may only contain digits, spaces, dashes and a leading +.'),
             'end_date.required' => __('Enter the last working day for an employee who has left.'),
             'user_id.unique' => __('That login is already linked to another employee.'),
+            'bank_account_no.regex' => __('The account number may only contain digits, spaces and dashes.'),
         ];
     }
 
@@ -75,6 +91,8 @@ class EmployeeRequest extends FormRequest
             'department_id' => __('department'),
             'user_id' => __('login account'),
             'employee_no' => __('employee number'),
+            'monthly_pcb' => __('monthly PCB'),
+            'bank_account_no' => __('bank account number'),
         ];
     }
 }

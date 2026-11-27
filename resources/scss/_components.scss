@@ -88,3 +88,24 @@
 [x-cloak] {
     display: none !important;
 }
+
+// Invoices, payslips and reports print as a clean sheet: no navigation, no card chrome.
+@media print {
+    body {
+        background: $white;
+    }
+
+    main.container {
+        max-width: none;
+        padding: 0 !important;
+    }
+
+    .card {
+        border: 0;
+        box-shadow: none;
+    }
+
+    .document-sheet .card-body {
+        padding: 0 !important;
+    }
+}

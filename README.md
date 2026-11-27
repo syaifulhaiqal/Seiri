@@ -1,6 +1,6 @@
 # NexOffice
 
-An office back-office system: **HR** today, with **payroll**, **accounting / finance** and **audit** planned next. Built on the LAB stack conventions (**L**aravel + **A**lpine.js + Bootstrap 5), starting from the LAB auth starter: two roles (**admin** and **user**), email-activated accounts, a dashboard, a profile page and user management.
+An office back-office system covering **HR**, **payroll**, **accounting / finance** and an **audit trail**. Built on the LAB stack conventions (**L**aravel + **A**lpine.js + Bootstrap 5), starting from the LAB auth starter: two roles (**admin** and **user**), email-activated accounts, a dashboard, a profile page and user management.
 
 ## Modules
 
@@ -8,9 +8,9 @@ An office back-office system: **HR** today, with **payroll**, **accounting / fin
 |--------|--------|
 | Accounts & users | Done |
 | HR: employees, departments, leave, attendance | Done |
-| Payroll | Planned |
-| Accounting / finance | Planned |
-| Audit trail | Planned |
+| Payroll: salaries, EPF / SOCSO / EIS / PCB, payslips | Done |
+| Finance: double-entry ledger, invoices, bills, expense claims, reports | Done |
+| Audit trail | Done |
 
 ## HR features
 
@@ -28,6 +28,38 @@ An office back-office system: **HR** today, with **payroll**, **accounting / fin
   Only working days count (weekends are skipped). Requests that overlap other leave, go over the balance or cross the new year are refused.
 - **My attendance**: clock in and out once a day; the last 30 days.
 - Users without an employee record see a notice asking them to contact HR.
+
+## Payroll features
+
+**Admins**
+- **Pay settings per employee**: basic salary, monthly PCB (from the LHDN schedule), bank details, and recurring allowances or deductions.
+- **Payroll runs**: pick a month and a draft payslip is made for everyone paid that month. Pay is pro-rated for people who join or leave mid-month, and approved **unpaid leave** is deducted.
+- Statutory contributions from `config/payroll.php`: EPF 11% employee and 13% / 12% employer (rounded up to the ringgit), SOCSO and EIS with a RM6,000 wage ceiling. **These are simplified percentage rates.** The official KWSP / PERKESO tables use wage bands, so check the figures before paying real salaries.
+- **Recalculate** a draft after changing pay settings, then **approve** it. Approving locks the payslips and posts the salary cost and payables to the ledger. **Mark paid** records the bank transfer.
+- Printable payslips. An employee with payslips or expense claims cannot be deleted; set them to Resigned instead.
+
+**Employees**
+- **My payslips**: every approved month, printable.
+- **My expense claims**: claim with a category, amount and receipt (JPG / PNG / PDF, up to 5 MB, within 90 days), and cancel while it is pending.
+
+## Finance features
+
+All amounts post to a **double-entry ledger**. Every journal entry must balance, entries are never edited, and mistakes are fixed with a reversing entry.
+
+- **Chart of accounts**: assets, liabilities, equity, income and expenses, each with its balance. The accounts the app posts to (bank, receivables, payables, salaries, EPF and so on) are marked *System*; they cannot be deleted or change type.
+- **Invoices** to customers and **bills** from suppliers: drafts with line items and sales tax, then issue (posts to the ledger), record full or part payments, or void an unpaid one (reverses the posting). Overdue invoices are flagged. Invoices print cleanly.
+- **Customers & suppliers** with what each one still owes.
+- **Expense claims**: approve (posts the expense and owes it to the employee), reject with a note, then pay back from a bank account. Receipts are stored privately and only the claimant and admins can open them.
+- **Journal**: manual entries with a live debit/credit balance check, and one-click reversal.
+- **Reports**: profit & loss, balance sheet, trial balance and a general ledger per account with a running balance. All of them are printable and filter by date.
+- The admin dashboard shows cash and bank, what customers owe, what you owe suppliers, this month's profit, and claims or payroll waiting for you.
+
+## Audit trail
+
+- Every create, update and delete on employees, leave, attendance, users, accounts, invoices, payments, claims, pay items and payroll runs is recorded with the user, time, IP address and the **old and new value of each changed field**. Passwords and other hidden fields show only that they changed.
+- Approvals, rejections, ledger postings, payments, voids, sign-ins, sign-outs and **failed sign-ins** (email only) are recorded too.
+- Filter by text, event, record type, user and date. Open an entry to see the before/after table and the record's full history, or **export CSV**.
+- Entries cannot be edited or deleted, not even from code: the model refuses.
 
 ## Account features
 
@@ -153,7 +185,7 @@ ADMIN_PASSWORD=password123
 php artisan migrate --seed
 ```
 
-This creates the tables, the admin account and the default leave types (annual, sick, emergency, unpaid). When `APP_ENV=local` it also adds demo data: `user@example.com` / `password123` and 19 sample users, plus 5 departments, about 25 employees, two weeks of attendance and some leave requests. The demo user is linked to an employee, so **My leave** and **My attendance** have data.
+This creates the tables, the admin account, the default leave types (annual, sick, emergency, unpaid) and the chart of accounts. When `APP_ENV=local` it also adds demo data: `user@example.com` / `password123` and 19 sample users, plus 5 departments, about 25 employees, two weeks of attendance, leave requests, customers, suppliers, invoices, bills, expense claims and two months of paid payroll (with this month left as a draft). The demo user is linked to an employee, so **My leave**, **My attendance**, **My payslips** and **My expense claims** have data. Seeding is not written to the audit trail.
 
 ### 8. Build the frontend
 
@@ -200,6 +232,8 @@ The two areas use separate guards (`web` and `admin`), so you can be signed in a
 3. Open Mailpit (<http://localhost:8025>) and click **Activate Account** in the email.
 4. Log in. You land on the **Dashboard**. Open **Profile** to edit your details or password.
 5. Log in as the admin at **/admin/login** and open **Users** to search, edit, deactivate or delete accounts.
+6. Open **Payroll runs**, open this month's draft, then **Approve** and **Mark paid**. Then check **Reports → Balance sheet**.
+7. Create an invoice, issue it, record a payment, and watch each step appear in the **Journal** and the **Audit trail**.
 
 ## Running the tests
 
@@ -213,7 +247,7 @@ The tests use an in-memory SQLite database and a fake mailer, so they never touc
 
 ```
 app/
-├── Enums/UserRole.php                      admin | user, with label() and context()
+├── Enums/                                  UserRole, EmployeeStatus, InvoiceStatus, AuditEvent, … with label() and context()
 ├── Http/
 │   ├── Controllers/
 │   │   ├── Auth/LoginController.php        login form, login, logout
@@ -221,15 +255,25 @@ app/
 │   │   ├── Auth/EmailVerificationController.php  activation link + resend
 │   │   ├── DashboardController.php
 │   │   ├── ProfileController.php           profile info + password
-│   │   └── Admin/UserController.php        list, edit, update, delete users
+│   │   ├── PayslipController.php, ClaimController.php   employee self-service
+│   │   └── Admin/                          users, HR, payroll, finance, reports, audit
 │   ├── Middleware/
 │   │   ├── EnsureAccountIsActive.php       'active' – signs out unverified users
 │   │   └── EnsureUserIsAdmin.php           'admin' – 403 for non-admins
 │   └── Requests/                           one FormRequest per form
-├── Models/User.php                         MustVerifyEmail, role cast, search scope
-└── Providers/AppServiceProvider.php        activation email text, password rules
-config/admin.php                            default admin account (from .env)
-database/seeders/AdminUserSeeder.php
+├── Listeners/RecordAuthenticationEvents.php  sign-ins, sign-outs and failed sign-ins → audit trail
+├── Models/                                 Concerns/Auditable.php logs every change
+├── Services/
+│   ├── Ledger.php                          posts and reverses balanced journal entries
+│   ├── FinancialReports.php                trial balance, P&L, balance sheet, account ledger
+│   ├── InvoicePosting.php                  drafts, issue, payments, void
+│   ├── ExpenseClaimPosting.php             approve, reject, reimburse
+│   ├── PayrollCalculator.php               one employee's payslip for a month
+│   └── PayrollService.php                  prepare, approve and pay a payroll run
+├── Support/Money.php                       amounts are worked out in sen (integers)
+└── Providers/AppServiceProvider.php        morph map, @money directive, password rules
+config/                                     admin.php, hr.php, finance.php, payroll.php
+database/seeders/                           admin, leave types, chart of accounts, demo data
 resources/
 ├── js/app.js + js/components/              Alpine.data() components
 ├── scss/                                   Bootstrap theme + app styles
@@ -240,7 +284,7 @@ resources/
     ├── profile/edit.blade.php
     └── admin/users/                        index, edit, delete modal
 routes/web.php
-tests/Feature/                              registration, login, verification, profile, admin
+tests/Feature/                              auth, profile, admin, Hr/, Payroll/, Finance/, Audit/, page smoke test
 ```
 
 ## Conventions (LAB style)

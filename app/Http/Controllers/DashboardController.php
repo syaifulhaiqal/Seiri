@@ -2,12 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ClaimStatus;
+use App\Enums\InvoiceType;
 use App\Enums\LeaveStatus;
+use App\Enums\PayrollStatus;
 use App\Enums\UserRole;
+use App\Models\Account;
 use App\Models\Attendance;
 use App\Models\Employee;
+use App\Models\ExpenseClaim;
+use App\Models\Invoice;
 use App\Models\LeaveRequest;
+use App\Models\PayrollRun;
 use App\Models\User;
+use App\Services\FinancialReports;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,6 +32,7 @@ class DashboardController extends Controller
             'user' => $user,
             'stats' => $isAdmin ? $this->userStats() : null,
             'hrStats' => $isAdmin ? $this->hrStats() : null,
+            'financeStats' => $isAdmin ? $this->financeStats() : null,
             'pendingLeave' => $isAdmin
                 ? LeaveRequest::query()->with(['employee', 'leaveType'])->where('status', LeaveStatus::Pending)->oldest()->take(5)->get()
                 : collect(),
@@ -63,6 +73,28 @@ class DashboardController extends Controller
                 ->distinct('employee_id')
                 ->count('employee_id'),
             'pending_leave' => LeaveRequest::query()->where('status', LeaveStatus::Pending)->count(),
+        ];
+    }
+
+    /**
+     * Money figures for the admin dashboard, in ringgit.
+     *
+     * @return array{cash: float, receivable: float, payable: float, profit: float, pending_claims: int, draft_payroll: int}
+     */
+    protected function financeStats(): array
+    {
+        $reports = app(FinancialReports::class);
+        $balances = $reports->balances();
+        $outstanding = fn (InvoiceType $type): float => (float) Invoice::query()->ofType($type)->outstanding()->sum('total')
+            - (float) Invoice::query()->ofType($type)->outstanding()->sum('amount_paid');
+
+        return [
+            'cash' => (float) Money::fromCents(Account::query()->cashAndBank()->pluck('id')->sum(fn (int $id) => $balances[$id] ?? 0)),
+            'receivable' => $outstanding(InvoiceType::Sales),
+            'payable' => $outstanding(InvoiceType::Purchase),
+            'profit' => (float) Money::fromCents($reports->profitAndLoss(today()->startOfMonth(), today())['net']),
+            'pending_claims' => ExpenseClaim::query()->where('status', ClaimStatus::Pending)->count(),
+            'draft_payroll' => PayrollRun::query()->where('status', PayrollStatus::Draft)->count(),
         ];
     }
 }

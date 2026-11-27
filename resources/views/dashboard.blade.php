@@ -7,9 +7,14 @@
             </p>
         </div>
         @if ($user->isAdmin())
-            <a href="{{ route('admin.users.index') }}" class="btn btn-primary">
-                <i class="bi bi-people me-1"></i>{{ __('Manage users') }}
-            </a>
+            <div class="d-flex gap-2">
+                <a href="{{ route('admin.invoices.create') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-plus-lg me-1"></i>{{ __('New invoice') }}
+                </a>
+                <a href="{{ route('admin.users.index') }}" class="btn btn-primary">
+                    <i class="bi bi-people me-1"></i>{{ __('Manage users') }}
+                </a>
+            </div>
         @endif
     </div>
 
@@ -34,6 +39,41 @@
                 </div>
             @endforeach
         </div>
+    @endif
+
+    @if ($financeStats)
+        <div class="row g-3 mb-3">
+            @foreach ([
+                ['label' => __('Cash & bank'), 'value' => \App\Support\Money::format($financeStats['cash']), 'icon' => 'bi-bank', 'color' => 'success', 'url' => route('admin.accounts.index', ['type' => 'asset'])],
+                ['label' => __('Customers owe'), 'value' => \App\Support\Money::format($financeStats['receivable']), 'icon' => 'bi-file-earmark-text', 'color' => 'primary', 'url' => route('admin.invoices.index', ['status' => 'open'])],
+                ['label' => __('You owe suppliers'), 'value' => \App\Support\Money::format($financeStats['payable']), 'icon' => 'bi-file-earmark-minus', 'color' => 'warning', 'url' => route('admin.bills.index', ['status' => 'open'])],
+                ['label' => __('Profit this month'), 'value' => \App\Support\Money::format($financeStats['profit']), 'icon' => 'bi-graph-up-arrow', 'color' => $financeStats['profit'] < 0 ? 'danger' : 'info', 'url' => route('admin.reports.profit_and_loss', ['from' => today()->startOfMonth()->toDateString()])],
+            ] as $card)
+                <div class="col-sm-6 col-xl-3">
+                    <a href="{{ $card['url'] }}" class="card stat-card h-100 text-decoration-none text-body">
+                        <div class="card-body d-flex align-items-center gap-3">
+                            <span class="stat-icon badge-soft-{{ $card['color'] }}"><i class="bi {{ $card['icon'] }}"></i></span>
+                            <div class="min-w-0">
+                                <div class="text-secondary small">{{ $card['label'] }}</div>
+                                <div class="stat-value fs-5 text-truncate">{{ $card['value'] }}</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            @endforeach
+        </div>
+
+        @if ($financeStats['pending_claims'] || $financeStats['draft_payroll'])
+            <div class="alert alert-info d-flex flex-wrap gap-3 align-items-center">
+                <i class="bi bi-bell"></i>
+                @if ($financeStats['pending_claims'])
+                    <a href="{{ route('admin.claims.index', ['status' => 'pending']) }}">{{ trans_choice(':count expense claim to review|:count expense claims to review', $financeStats['pending_claims']) }}</a>
+                @endif
+                @if ($financeStats['draft_payroll'])
+                    <a href="{{ route('admin.payroll.index') }}">{{ trans_choice(':count payroll draft to approve|:count payroll drafts to approve', $financeStats['draft_payroll']) }}</a>
+                @endif
+            </div>
+        @endif
     @endif
 
     @if ($stats)
@@ -147,6 +187,20 @@
                                             ? __('Clocked in at :time.', ['time' => $todayAttendance->clock_in_at->format('g:i A')])
                                             : __('You have not clocked in yet.') }}
                                     </div>
+                                </div>
+                            </a>
+                            <a href="{{ route('payslips.index') }}" class="list-group-item list-group-item-action d-flex gap-3 py-3">
+                                <i class="bi bi-wallet2 fs-4 text-primary"></i>
+                                <div>
+                                    <div class="fw-medium">{{ __('View your payslips') }}</div>
+                                    <div class="small text-secondary">{{ __('Print or save any month once payroll is approved.') }}</div>
+                                </div>
+                            </a>
+                            <a href="{{ route('claims.index') }}" class="list-group-item list-group-item-action d-flex gap-3 py-3">
+                                <i class="bi bi-receipt-cutoff fs-4 text-primary"></i>
+                                <div>
+                                    <div class="fw-medium">{{ __('Claim an expense') }}</div>
+                                    <div class="small text-secondary">{{ __('Upload a receipt and get paid back.') }}</div>
                                 </div>
                             </a>
                             <a href="{{ route('leave.index') }}" class="list-group-item list-group-item-action d-flex gap-3 py-3">

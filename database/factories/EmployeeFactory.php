@@ -28,6 +28,10 @@ class EmployeeFactory extends Factory
             'status' => EmployeeStatus::Active,
             // Relative to now() so it follows Carbon::setTestNow() in tests.
             'join_date' => now()->subDays(fake()->numberBetween(30, 1800))->startOfDay(),
+            'basic_salary' => fake()->randomElement([2800, 3200, 3800, 4500, 5200, 6500, 8000]),
+            'monthly_pcb' => 0,
+            'bank_name' => fake()->randomElement(['Maybank', 'CIMB Bank', 'Public Bank', 'RHB Bank', 'Hong Leong Bank']),
+            'bank_account_no' => fake()->numerify('1#### #### ###'),
             'date_of_birth' => fake()->optional()->passthrough(now()->subDays(fake()->numberBetween(7300, 20000))->startOfDay()),
         ];
     }

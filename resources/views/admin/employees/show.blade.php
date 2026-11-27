@@ -69,12 +69,68 @@
                 </div>
             </div>
 
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2>{{ __('Pay') }}</h2>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0 small">
+                        <dt class="col-5 text-secondary fw-normal">{{ __('Basic salary') }}</dt>
+                        <dd class="col-7">{{ (float) $employee->basic_salary > 0 ? \App\Support\Money::format($employee->basic_salary) : __('Not set') }}</dd>
+
+                        <dt class="col-5 text-secondary fw-normal">{{ __('Monthly PCB') }}</dt>
+                        <dd class="col-7">@money($employee->monthly_pcb)</dd>
+
+                        <dt class="col-5 text-secondary fw-normal">{{ __('Bank') }}</dt>
+                        <dd class="col-7 mb-0">{{ $employee->bank_account_no ? $employee->bank_name . ' ' . $employee->bank_account_no : '—' }}</dd>
+                    </dl>
+                </div>
+                <ul class="list-group list-group-flush border-top">
+                    @forelse ($employee->payItems as $item)
+                        <li class="list-group-item d-flex align-items-center justify-content-between gap-2">
+                            <span class="small">
+                                {{ $item->name }}
+                                <x-enum-badge :value="$item->type" class="ms-1" />
+                            </span>
+                            <span class="d-flex align-items-center gap-2 text-nowrap">
+                                <span class="small">{{ $item->type === \App\Enums\PayItemType::Deduction ? '−' : '+' }}@money($item->amount)</span>
+                                <form method="POST" action="{{ route('admin.employees.pay_items.destroy', [$employee, $item]) }}" x-data="formSubmit" x-on:submit="submit()">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-link text-secondary p-0" x-bind:disabled="submitting" title="{{ __('Remove') }}">
+                                        <i class="bi bi-x-lg"></i><span class="visually-hidden">{{ __('Remove :name', ['name' => $item->name]) }}</span>
+                                    </button>
+                                </form>
+                            </span>
+                        </li>
+                    @empty
+                        <li class="list-group-item small text-secondary">{{ __('No monthly allowances or deductions.') }}</li>
+                    @endforelse
+                </ul>
+                <div class="card-body border-top">
+                    <form method="POST" action="{{ route('admin.employees.pay_items.store', $employee) }}" x-data="formSubmit" x-on:submit="submit()" novalidate>
+                        @csrf
+                        <div class="small fw-medium mb-2">{{ __('Add a monthly item') }}</div>
+                        <x-form.input name="name" bag="payItem" :placeholder="__('e.g. Transport allowance')" aria-label="{{ __('Name') }}" />
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <x-form.select name="type" bag="payItem" :options="\App\Enums\PayItemType::options()" aria-label="{{ __('Type') }}" />
+                            </div>
+                            <div class="col-6">
+                                <x-form.input name="amount" type="number" step="0.01" min="0.01" bag="payItem" :placeholder="__('Amount')" aria-label="{{ __('Amount') }}" />
+                            </div>
+                        </div>
+                        <x-submit-button variant="outline-primary" class="btn-sm">{{ __('Add item') }}</x-submit-button>
+                    </form>
+                </div>
+            </div>
+
             <div class="card border-danger-subtle">
                 <div class="card-header">
                     <h2 class="text-danger">{{ __('Delete employee') }}</h2>
                 </div>
                 <div class="card-body">
-                    <p class="text-secondary small">{{ __('Removes this employee with their leave and attendance history. To keep the history, set the status to Resigned instead.') }}</p>
+                    <p class="text-secondary small">{{ __('Removes this employee with their leave and attendance history. Employees with payslips or expense claims cannot be deleted; set the status to Resigned instead.') }}</p>
                     <button type="button" class="btn btn-outline-danger" x-on:click="open(@js($employee->name), @js(route('admin.employees.destroy', $employee)))">
                         <i class="bi bi-trash me-1"></i>{{ __('Delete employee') }}
                     </button>
@@ -120,11 +176,41 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card mb-4">
                 <div class="card-header">
                     <h2>{{ __('Recent attendance') }}</h2>
                 </div>
                 @include('partials.attendance-table', ['attendances' => $attendances])
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>{{ __('Recent payslips') }}</h2>
+                </div>
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">{{ __('Month') }}</th>
+                                <th>{{ __('Status') }}</th>
+                                <th class="text-end">{{ __('Gross') }}</th>
+                                <th class="text-end pe-3">{{ __('Net pay') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($payslips as $payslip)
+                                <tr>
+                                    <td class="ps-3"><a href="{{ route('admin.payroll.payslip', [$payslip->payrollRun, $payslip]) }}" class="text-decoration-none">{{ $payslip->payrollRun->periodLabel() }}</a></td>
+                                    <td><x-enum-badge :value="$payslip->payrollRun->status" /></td>
+                                    <td class="text-end text-nowrap">@money($payslip->gross_pay)</td>
+                                    <td class="text-end text-nowrap pe-3">@money($payslip->net_pay)</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="4" class="text-center text-secondary py-4">{{ __('No payslips yet.') }}</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 

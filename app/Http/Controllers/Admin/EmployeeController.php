@@ -62,13 +62,14 @@ class EmployeeController extends Controller
 
     public function show(Employee $employee): View
     {
-        $employee->load(['department', 'user']);
+        $employee->load(['department', 'user', 'payItems']);
 
         return view('admin.employees.show', [
             'employee' => $employee,
             'balances' => $employee->leaveBalances(now()->year),
             'leaveRequests' => $employee->leaveRequests()->with('leaveType')->latest('start_date')->take(10)->get(),
             'attendances' => $employee->attendances()->latest('date')->take(10)->get(),
+            'payslips' => $employee->payslips()->with('payrollRun')->latest('id')->take(6)->get(),
         ]);
     }
 
@@ -88,6 +89,11 @@ class EmployeeController extends Controller
 
     public function destroy(Employee $employee): RedirectResponse
     {
+        // Payroll and claims are financial records; they must survive, so the employee stays too.
+        if ($employee->payslips()->exists() || $employee->expenseClaims()->exists()) {
+            return back()->withErrors(['delete' => __(':name has payslips or expense claims, so the record must be kept. Set the status to Resigned instead.', ['name' => $employee->name])]);
+        }
+
         $name = $employee->name;
         $employee->delete();
 

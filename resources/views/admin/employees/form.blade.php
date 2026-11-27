@@ -109,6 +109,18 @@
                         />
                     </div>
                 </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h2>{{ __('Pay') }}</h2>
+                    </div>
+                    <div class="card-body">
+                        <x-form.input name="basic_salary" type="number" step="0.01" min="0" :label="__('Basic salary per month (:currency)', ['currency' => config('finance.currency')])" :value="$employee->basic_salary" :help="__('Leave at 0 to keep this employee out of payroll.')" />
+                        <x-form.input name="monthly_pcb" type="number" step="0.01" min="0" :label="__('Monthly PCB (:currency)', ['currency' => config('finance.currency')])" :value="$employee->monthly_pcb" :help="__('Income tax deduction from the LHDN schedule or e-PCB calculator.')" />
+                        <x-form.input name="bank_name" :label="__('Bank')" :value="$employee->bank_name" placeholder="Maybank" />
+                        <x-form.input name="bank_account_no" :label="__('Bank account no.')" :value="$employee->bank_account_no" />
+                    </div>
+                </div>
             </div>
         </div>
 

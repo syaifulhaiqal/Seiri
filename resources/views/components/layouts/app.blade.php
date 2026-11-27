@@ -23,10 +23,10 @@
       x-init="$watch('collapsed', v => localStorage.setItem('sidebar-collapsed', v ? '1' : '0'))"
       :class="{ 'sidebar-collapsed': collapsed }">
 <div class="d-flex">
-    <aside class="offcanvas-lg offcanvas-start app-sidebar" tabindex="-1" id="sidebar" aria-label="{{ __('Main navigation') }}">
+    <aside class="offcanvas-lg offcanvas-start app-sidebar d-print-none" tabindex="-1" id="sidebar" aria-label="{{ __('Main navigation') }}">
         <div class="d-flex align-items-center justify-content-between p-3">
             <a class="auth-brand fs-6" href="{{ route($area . 'dashboard') }}">
-                <span class="brand-mark"><i class="bi bi-shield-lock"></i></span>
+                <span class="brand-mark"><i class="bi bi-buildings"></i></span>
                 <span class="nav-text">{{ config('app.name') }}</span>
             </a>
             <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="{{ __('Close') }}"></button>
@@ -54,16 +54,57 @@
                     ['route' => 'admin.leave_types', 'label' => __('Leave types'), 'icon' => 'bi-sliders'],
                 ] as $item)
                     <li class="nav-item">
-                        <a @class(['nav-link', 'active' => request()->routeIs($item['route'] . '.*')]) href="{{ route($item['route'] . '.index') }}" title="{{ $item['label'] }}">
+                        <a @class(['nav-link', 'active' => request()->routeIs($item['active'] ?? $item['route'] . '.*')]) href="{{ route($item['route'] . '.index') }}" title="{{ $item['label'] }}">
                             <i class="bi {{ $item['icon'] }}"></i><span class="nav-text">{{ $item['label'] }}</span>
                         </a>
                     </li>
                 @endforeach
+
+                <li class="nav-heading"><span class="nav-text">{{ __('Payroll') }}</span></li>
+                @foreach ([
+                    ['route' => 'admin.payroll', 'label' => __('Payroll runs'), 'icon' => 'bi-wallet2'],
+                    ['route' => 'admin.claims', 'label' => __('Expense claims'), 'icon' => 'bi-receipt-cutoff'],
+                ] as $item)
+                    <li class="nav-item">
+                        <a @class(['nav-link', 'active' => request()->routeIs($item['active'] ?? $item['route'] . '.*')]) href="{{ route($item['route'] . '.index') }}" title="{{ $item['label'] }}">
+                            <i class="bi {{ $item['icon'] }}"></i><span class="nav-text">{{ $item['label'] }}</span>
+                        </a>
+                    </li>
+                @endforeach
+
+                <li class="nav-heading"><span class="nav-text">{{ __('Finance') }}</span></li>
+                @foreach ([
+                    ['route' => 'admin.invoices', 'label' => __('Invoices'), 'icon' => 'bi-file-earmark-text'],
+                    ['route' => 'admin.bills', 'label' => __('Bills'), 'icon' => 'bi-file-earmark-minus'],
+                    ['route' => 'admin.contacts', 'label' => __('Customers & suppliers'), 'icon' => 'bi-person-vcard'],
+                    ['route' => 'admin.journal_entries', 'label' => __('Journal'), 'icon' => 'bi-journal-text'],
+                    ['route' => 'admin.accounts', 'label' => __('Chart of accounts'), 'icon' => 'bi-list-columns'],
+                ] as $item)
+                    <li class="nav-item">
+                        <a @class(['nav-link', 'active' => request()->routeIs($item['active'] ?? $item['route'] . '.*')]) href="{{ route($item['route'] . '.index') }}" title="{{ $item['label'] }}">
+                            <i class="bi {{ $item['icon'] }}"></i><span class="nav-text">{{ $item['label'] }}</span>
+                        </a>
+                    </li>
+                @endforeach
+                <li class="nav-item">
+                    <a @class(['nav-link', 'active' => request()->routeIs('admin.reports.*')]) href="{{ route('admin.reports.profit_and_loss') }}" title="{{ __('Reports') }}">
+                        <i class="bi bi-bar-chart-line"></i><span class="nav-text">{{ __('Reports') }}</span>
+                    </a>
+                </li>
+
+                <li class="nav-heading"><span class="nav-text">{{ __('Audit') }}</span></li>
+                <li class="nav-item">
+                    <a @class(['nav-link', 'active' => request()->routeIs('admin.audit.*')]) href="{{ route('admin.audit.index') }}" title="{{ __('Audit trail') }}">
+                        <i class="bi bi-shield-check"></i><span class="nav-text">{{ __('Audit trail') }}</span>
+                    </a>
+                </li>
             @else
                 <li class="nav-heading"><span class="nav-text">{{ __('My work') }}</span></li>
                 @foreach ([
                     ['route' => 'leave', 'label' => __('My leave'), 'icon' => 'bi-calendar2-check'],
                     ['route' => 'attendance', 'label' => __('My attendance'), 'icon' => 'bi-clock-history'],
+                    ['route' => 'payslips', 'label' => __('My payslips'), 'icon' => 'bi-wallet2'],
+                    ['route' => 'claims', 'label' => __('My expense claims'), 'icon' => 'bi-receipt-cutoff'],
                 ] as $item)
                     <li class="nav-item">
                         <a @class(['nav-link', 'active' => request()->routeIs($item['route'] . '.*')]) href="{{ route($item['route'] . '.index') }}" title="{{ $item['label'] }}">
@@ -76,7 +117,7 @@
     </aside>
 
     <div class="flex-grow-1" style="min-width: 0">
-        <header class="app-topbar sticky-top">
+        <header class="app-topbar sticky-top d-print-none">
             <button class="btn btn-link text-secondary p-0 fs-4 d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="{{ __('Open navigation') }}">
                 <i class="bi bi-list"></i>
             </button>
