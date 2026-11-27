@@ -40,7 +40,7 @@
             <form method="GET" action="{{ route($route . '.index') }}" class="row g-2 align-items-center" x-data="autoSubmit">
                 <div class="col-md-6 col-lg-5">
                     <div class="input-group">
-                        <span class="input-group-text bg-white"><i class="bi bi-search text-secondary"></i></span>
+                        <span class="input-group-text bg-body"><i class="bi bi-search text-secondary"></i></span>
                         <input type="search" name="search" class="form-control border-start-0 ps-0" value="{{ $filters['search'] ?? '' }}" placeholder="{{ __('Search number, reference or :contact', ['contact' => strtolower($type->contactLabel())]) }}" aria-label="{{ __('Search') }}">
                     </div>
                 </div>
@@ -84,8 +84,8 @@
                                 @endif
                             </td>
                             <td>{{ $document->contact->name }}</td>
-                            <td class="small text-nowrap">{{ $document->issue_date->format('j M Y') }}</td>
-                            <td @class(['small text-nowrap', 'text-danger fw-medium' => $document->isOverdue()])>{{ $document->due_date->format('j M Y') }}</td>
+                            <td class="small text-nowrap">{{ $document->issue_date->translatedFormat('j M Y') }}</td>
+                            <td @class(['small text-nowrap', 'text-danger fw-medium' => $document->isOverdue()])>{{ $document->due_date->translatedFormat('j M Y') }}</td>
                             <td>
                                 <x-enum-badge :value="$document->status" />
                                 @if ($document->isOverdue())

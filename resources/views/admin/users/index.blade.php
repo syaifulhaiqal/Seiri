@@ -13,7 +13,7 @@
                 <form method="GET" action="{{ route('admin.users.index') }}" class="row g-2 align-items-center" x-data="autoSubmit">
                     <div class="col-md-6 col-lg-5">
                         <div class="input-group">
-                            <span class="input-group-text bg-white"><i class="bi bi-search text-secondary"></i></span>
+                            <span class="input-group-text bg-body"><i class="bi bi-search text-secondary"></i></span>
                             <input type="search" name="search" class="form-control border-start-0 ps-0" value="{{ $filters['search'] ?? '' }}" placeholder="{{ __('Search name, email or phone') }}" aria-label="{{ __('Search') }}">
                         </div>
                     </div>
@@ -72,14 +72,21 @@
                                     </div>
                                 </td>
                                 <td class="text-nowrap">{{ $user->phone_number ?: '—' }}</td>
-                                <td><x-role-badge :role="$user->role" /></td>
+                                <td>
+                                    <x-role-badge :role="$user->role" />
+                                    @if ($user->adminRole)
+                                        <div class="small text-secondary">{{ $user->adminRole->name }}</div>
+                                    @endif
+                                </td>
                                 <td><x-status-badge :user="$user" /></td>
-                                <td class="text-secondary small text-nowrap">{{ $user->created_at->format('j M Y') }}</td>
+                                <td class="text-secondary small text-nowrap">{{ $user->created_at->translatedFormat('j M Y') }}</td>
                                 <td class="text-end pe-3 text-nowrap">
+                                    @can('users.edit', $user)
                                     <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-secondary" title="{{ __('Edit') }}">
                                         <i class="bi bi-pencil"></i><span class="visually-hidden">{{ __('Edit') }}</span>
                                     </a>
-                                    @unless ($user->is(auth()->user()))
+                                    @endcan
+                                    @if (! $user->is(auth()->user()) && auth()->user()->can('users.edit', $user))
                                         <button
                                             type="button"
                                             class="btn btn-sm btn-outline-danger"
@@ -88,7 +95,7 @@
                                         >
                                             <i class="bi bi-trash"></i><span class="visually-hidden">{{ __('Delete') }}</span>
                                         </button>
-                                    @endunless
+                                    @endif
                                 </td>
                             </tr>
                         @empty

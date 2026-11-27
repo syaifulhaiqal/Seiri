@@ -1,5 +1,5 @@
 @php
-    $changes = $log->changes();
+    $changes = $log->changes(auth()->user()->can('payroll.view'));
 @endphp
 
 <x-layouts.app :title="__('Audit entry')">
@@ -14,7 +14,7 @@
                     · {{ $log->subject_label }}
                 @endif
             </h1>
-            <p class="text-secondary mb-0">{{ $log->created_at->format('l, j F Y, g:i:s A') }}</p>
+            <p class="text-secondary mb-0">{{ $log->created_at->translatedFormat('l, j F Y, g:i:s A') }}</p>
         </div>
     </div>
 
@@ -70,7 +70,7 @@
                                     <a href="{{ route('admin.audit.show', $entry) }}" class="text-decoration-none">{{ $entry->event->label() }}</a>
                                     <span class="text-secondary">· {{ $entry->user_name ?? __('System') }}</span>
                                 </span>
-                                <span class="text-secondary text-nowrap">{{ $entry->created_at->format('j M Y, g:i A') }}</span>
+                                <span class="text-secondary text-nowrap">{{ $entry->created_at->translatedFormat('j M Y, g:i A') }}</span>
                             </li>
                         @endforeach
                     </ul>

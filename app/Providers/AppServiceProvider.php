@@ -2,10 +2,13 @@
 
 namespace App\Providers;
 
+use App\Enums\Permission;
 use App\Models;
 use App\Models\User;
+use App\Support\HolidayCalendar;
 use App\Support\Money;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -14,6 +17,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -26,7 +30,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->scoped(HolidayCalendar::class);
     }
 
     /**
@@ -36,11 +40,15 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrapFive();
 
+        // Tests fail on a relation loaded inside a loop (an N+1 query), so slow pages are caught early.
+        Model::preventLazyLoading($this->app->runningUnitTests());
+
         Password::defaults(fn () => Password::min(8)->letters()->numbers());
 
         $this->configureVerificationEmail();
         $this->configureAreas();
         $this->configureAudit();
+        $this->configurePermissions();
 
         // @money($amount) prints "RM 1,234.50".
         Blade::directive('money', fn (string $expression) => '<?php echo e(\\' . Money::class . "::format({$expression})); ?>");
@@ -70,7 +78,41 @@ class AppServiceProvider extends ServiceProvider
             'invoice' => Models\Invoice::class,
             'payment' => Models\Payment::class,
             'expense_claim' => Models\ExpenseClaim::class,
+            'role' => Models\Role::class,
+            'holiday' => Models\Holiday::class,
+            'approver' => Models\Approver::class,
+            'overtime_request' => Models\OvertimeRequest::class,
+            'movement' => Models\Movement::class,
+            'training' => Models\Training::class,
+            'product' => Models\Product::class,
+            'stock_movement' => Models\StockMovement::class,
+            'purchase_request' => Models\PurchaseRequest::class,
+            'purchase_order' => Models\PurchaseOrder::class,
+            'lead' => Models\Lead::class,
+            'quotation' => Models\Quotation::class,
+            'clock_link' => Models\ClockLink::class,
         ]);
+    }
+
+    /**
+     * One gate per App\Enums\Permission (e.g. can:payroll.approve). The super admin passes every gate,
+     * including roles.manage, which no admin role can grant.
+     */
+    protected function configurePermissions(): void
+    {
+        Gate::before(fn (User $user) => $user->isSuperAdmin() ? true : null);
+
+        foreach (Permission::cases() as $permission) {
+            Gate::define($permission->value, fn (User $user) => $user->hasPermission($permission));
+        }
+
+        Gate::define('roles.manage', fn (User $user) => false);
+
+        // Purchase requests are seen by those who raise them and those who approve them.
+        Gate::define('procurement.view', fn (User $user) => $user->hasPermission(Permission::ProcurementManage) || $user->hasPermission(Permission::ProcurementApprove));
+
+        // Admins with the Users permission manage ordinary accounts, never other admins.
+        Gate::define('users.edit', fn (User $user, User $target) => $user->hasPermission(Permission::UsersManage) && ! $target->isAdmin());
     }
 
     /**

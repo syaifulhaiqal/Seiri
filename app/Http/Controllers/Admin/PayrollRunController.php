@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\PayrollStatus;
+use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PayFromAccountRequest;
 use App\Http\Requests\Admin\PayrollRunRequest;
@@ -10,7 +11,10 @@ use App\Models\Account;
 use App\Models\Employee;
 use App\Models\PayrollRun;
 use App\Models\Payslip;
+use App\Notifications\PayrollAwaitingApproval;
+use App\Notifications\PayslipReady;
 use App\Services\PayrollService;
+use App\Support\Notify;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -35,6 +39,10 @@ class PayrollRunController extends Controller
         $run->save();
 
         $this->payroll->generate($run);
+
+        if ($run->employee_count > 0) {
+            Notify::admins(Permission::PayrollApprove, new PayrollAwaitingApproval($run));
+        }
 
         return to_route('admin.payroll.show', $run)->with('status', trans_choice(
             'Payroll for :month prepared: :count payslip. Check it, then approve.|Payroll for :month prepared: :count payslips. Check them, then approve.',
@@ -75,6 +83,9 @@ class PayrollRunController extends Controller
         }
 
         $this->payroll->approve($payrollRun, $request->user());
+
+        $payrollRun->payslips()->with('employee.user')->get()
+            ->each(fn (Payslip $payslip) => Notify::employee($payslip->employee, new PayslipReady($payslip->setRelation('payrollRun', $payrollRun))));
 
         return back()->with('status', __('Payroll for :month approved and posted to the ledger.', ['month' => $payrollRun->periodLabel()]));
     }

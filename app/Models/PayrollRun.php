@@ -91,7 +91,7 @@ class PayrollRun extends Model
      */
     public function periodLabel(): string
     {
-        return $this->period->format('F Y');
+        return $this->period->translatedFormat('F Y');
     }
 
     public function auditLabel(): string

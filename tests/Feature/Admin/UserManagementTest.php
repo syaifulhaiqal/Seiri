@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Enums\UserRole;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -30,7 +31,7 @@ class UserManagementTest extends TestCase
 
     public function test_admin_dashboard_shows_stats_and_the_users_link(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         User::factory(3)->create();
         User::factory()->unverified()->create();
 
@@ -51,7 +52,7 @@ class UserManagementTest extends TestCase
 
     public function test_admin_can_list_search_and_filter_users(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         User::factory()->create(['name' => 'Haziq Iskandar', 'email' => 'haziq@example.com']);
         User::factory()->unverified()->create(['name' => 'Mei Ling', 'email' => 'mei@example.com']);
 
@@ -71,8 +72,9 @@ class UserManagementTest extends TestCase
 
     public function test_admin_can_edit_a_user(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $user = User::factory()->unverified()->create();
+        $role = Role::factory()->create();
 
         $this->actingAs($admin, 'admin')->get(route('admin.users.edit', $user))->assertOk()->assertSee($user->email);
 
@@ -81,6 +83,7 @@ class UserManagementTest extends TestCase
             'email' => $user->email,
             'phone_number' => '011-2222 3333',
             'role' => 'admin',
+            'admin_role_id' => $role->id,
             'is_active' => '1',
             'password' => 'resetpass99',
             'password_confirmation' => 'resetpass99',
@@ -89,13 +92,14 @@ class UserManagementTest extends TestCase
         $user->refresh();
         $this->assertSame('Updated Name', $user->name);
         $this->assertSame(UserRole::Admin, $user->role);
+        $this->assertTrue($user->adminRole->is($role));
         $this->assertTrue($user->hasVerifiedEmail());
         $this->assertTrue(Hash::check('resetpass99', $user->password));
     }
 
     public function test_leaving_password_blank_keeps_the_old_one(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $user = User::factory()->create();
 
         $this->actingAs($admin, 'admin')->put(route('admin.users.update', $user), [
@@ -112,7 +116,7 @@ class UserManagementTest extends TestCase
 
     public function test_deactivated_user_is_signed_out_on_next_request(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $user = User::factory()->create();
 
         $this->actingAs($admin, 'admin')->put(route('admin.users.update', $user), [
@@ -131,7 +135,7 @@ class UserManagementTest extends TestCase
 
     public function test_admin_cannot_demote_or_deactivate_themselves(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
 
         $this->actingAs($admin, 'admin')->put(route('admin.users.update', $admin), [
             'name' => $admin->name,
@@ -140,12 +144,12 @@ class UserManagementTest extends TestCase
             'is_active' => '0',
         ])->assertSessionHasErrors(['role', 'is_active']);
 
-        $this->assertSame(UserRole::Admin, $admin->fresh()->role);
+        $this->assertSame(UserRole::SuperAdmin, $admin->fresh()->role);
     }
 
     public function test_admin_can_delete_a_user(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $user = User::factory()->create();
 
         $this->actingAs($admin, 'admin')->delete(route('admin.users.destroy', $user))
@@ -156,7 +160,7 @@ class UserManagementTest extends TestCase
 
     public function test_admin_cannot_delete_themselves(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
 
         $this->actingAs($admin, 'admin')->delete(route('admin.users.destroy', $admin))
             ->assertSessionHasErrors('delete');

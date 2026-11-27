@@ -36,4 +36,14 @@ return [
         'wage_ceiling' => 6000,
     ],
 
+    /*
+    | The employer printed on EA forms: company name, LHDN employer number (E number) and address.
+    */
+
+    'employer' => [
+        'name' => env('PAYROLL_EMPLOYER_NAME', env('APP_NAME', 'Seiri')),
+        'tax_no' => env('PAYROLL_EMPLOYER_TAX_NO'),
+        'address' => env('PAYROLL_EMPLOYER_ADDRESS'),
+    ],
+
 ];

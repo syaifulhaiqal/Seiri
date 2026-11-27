@@ -1,13 +1,26 @@
 <x-layouts.app :title="__('Attendance')">
+    @if ($date->isToday())
+        {{-- Today's board refreshes itself, so HR can keep it open to see who is in. --}}
+        <div x-data x-init="setTimeout(() => window.location.reload(), 60000)" hidden></div>
+    @endif
+
     <div class="page-header">
         <div>
             <h1>{{ __('Attendance') }}</h1>
             <p class="text-secondary mb-0">
-                {{ $date->isToday() ? __('Today, :date', ['date' => $date->format('l j M Y')]) : $date->format('l, j M Y') }}
+                {{ $date->isToday() ? __('Today, :date', ['date' => $date->translatedFormat('l j M Y')]) : $date->translatedFormat('l, j M Y') }}
                 · {{ __('Late after :time', ['time' => \Illuminate\Support\Carbon::parse(config('hr.work_start'))->format('g:i A')]) }}
             </p>
         </div>
         <div class="d-flex gap-2">
+            <a href="{{ route('admin.attendance.qr') }}" class="btn btn-primary">
+                <i class="bi bi-qr-code me-1"></i>{{ __('Office QR screen') }}
+            </a>
+            @can('employees.manage')
+                <a href="{{ route('admin.attendance.links.index') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-link-45deg me-1"></i>{{ __('Clock-in links') }}
+                </a>
+            @endcan
             <a href="{{ route('admin.attendance.index', [...$filters, 'date' => $date->copy()->subDay()->toDateString()]) }}" class="btn btn-outline-secondary" title="{{ __('Previous day') }}">
                 <i class="bi bi-chevron-left"></i><span class="visually-hidden">{{ __('Previous day') }}</span>
             </a>
@@ -21,7 +34,10 @@
     </div>
 
     <div class="row g-3 mb-4">
-        @foreach (\App\Enums\AttendanceStatus::cases() as $status)
+        @foreach ($counts as $value => $count)
+            @php
+                $status = \App\Enums\AttendanceStatus::from($value);
+            @endphp
             <div class="col-6 col-xl-3">
                 <a href="{{ route('admin.attendance.index', [...$filters, 'date' => $date->toDateString(), 'status' => $status->value]) }}" class="card stat-card h-100 text-decoration-none text-body">
                     <div class="card-body d-flex align-items-center gap-3">
@@ -30,12 +46,13 @@
                                 \App\Enums\AttendanceStatus::Present => 'bi-check-circle',
                                 \App\Enums\AttendanceStatus::Late => 'bi-alarm',
                                 \App\Enums\AttendanceStatus::OnLeave => 'bi-airplane',
+                                \App\Enums\AttendanceStatus::Holiday => 'bi-calendar-event',
                                 \App\Enums\AttendanceStatus::Absent => 'bi-x-circle',
                             }])></i>
                         </span>
                         <div>
                             <div class="text-secondary small">{{ $status->label() }}</div>
-                            <div class="stat-value">{{ number_format($counts[$status->value]) }}</div>
+                            <div class="stat-value">{{ number_format($count) }}</div>
                         </div>
                     </div>
                 </a>
@@ -65,7 +82,15 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-6 col-md-3 d-flex gap-2 justify-content-md-end">
+                <div class="col-6 col-md-2">
+                    <select name="method" class="form-select" aria-label="{{ __('How') }}" x-on:change="submit()">
+                        <option value="">{{ __('Office and remote') }}</option>
+                        @foreach (\App\Enums\ClockMethod::cases() as $method)
+                            <option value="{{ $method->value }}" @selected(($filters['method'] ?? '') === $method->value)>{{ $method->label() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-6 col-md-1 d-flex gap-2 justify-content-md-end">
                     @if (array_filter($filters))
                         <a href="{{ route('admin.attendance.index') }}" class="btn btn-outline-secondary">{{ __('Reset') }}</a>
                     @endif
@@ -82,6 +107,7 @@
                         <th>{{ __('Clock in') }}</th>
                         <th>{{ __('Clock out') }}</th>
                         <th>{{ __('Hours') }}</th>
+                        <th>{{ __('How & where') }}</th>
                         <th class="pe-3">{{ __('Status') }}</th>
                     </tr>
                 </thead>
@@ -101,6 +127,9 @@
                             <td>{{ $row['attendance']?->clock_in_at?->format('g:i A') ?? '—' }}</td>
                             <td>{{ $row['attendance']?->clock_out_at?->format('g:i A') ?? '—' }}</td>
                             <td>{{ $row['attendance']?->workedHours() ?? '—' }}</td>
+                            <td class="small">
+                                @include('partials.clock-where', ['attendance' => $row['attendance']])
+                            </td>
                             <td class="pe-3">
                                 @if ($row['status'])
                                     <x-enum-badge :value="$row['status']" />
@@ -111,7 +140,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center text-secondary py-5">
+                            <td colspan="7" class="text-center text-secondary py-5">
                                 <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                                 {{ __('No employees match your filters.') }}
                             </td>

@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\ApprovalType;
 use App\Enums\LeaveStatus;
 use App\Models\Concerns\Auditable;
-use Carbon\CarbonInterface;
-use Carbon\CarbonPeriod;
+use App\Models\Concerns\HasApprovals;
+use App\Notifications\LeaveReviewed;
+use App\Support\DateRange;
+use App\Support\HolidayCalendar;
+use App\Support\Notify;
 use Database\Factories\LeaveRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -22,7 +26,7 @@ use Illuminate\Support\Carbon;
 class LeaveRequest extends Model
 {
     /** @use HasFactory<LeaveRequestFactory> */
-    use Auditable, HasFactory;
+    use Auditable, HasApprovals, HasFactory;
 
     /**
      * @return array<string, string>
@@ -39,17 +43,11 @@ class LeaveRequest extends Model
     }
 
     /**
-     * Weekdays between two dates, both included. Weekends are not counted.
+     * Working days between two dates, both included. Weekends and public holidays are not counted.
      */
     public static function workingDays(Carbon $start, Carbon $end): int
     {
-        if ($end->lt($start)) {
-            return 0;
-        }
-
-        return collect(CarbonPeriod::create($start->copy()->startOfDay(), $end->copy()->startOfDay()))
-            ->reject(fn (CarbonInterface $day) => $day->isWeekend())
-            ->count();
+        return app(HolidayCalendar::class)->workingDays($start, $end);
     }
 
     /**
@@ -87,6 +85,44 @@ class LeaveRequest extends Model
     public function isPending(): bool
     {
         return $this->status === LeaveStatus::Pending;
+    }
+
+    public function approvalType(): ApprovalType
+    {
+        return ApprovalType::Leave;
+    }
+
+    public function approvalSummary(): string
+    {
+        return trans_choice(':type · :dates (:days working day)|:type · :dates (:days working days)', $this->days, [
+            'type' => $this->leaveType->name,
+            'dates' => DateRange::format($this->start_date, $this->end_date),
+            'days' => $this->days,
+        ]);
+    }
+
+    /**
+     * Approve it (by HR, or the last approver in the chain) and tell the employee.
+     */
+    public function approveFinally(User $by, null|string $note): void
+    {
+        $this->decide(LeaveStatus::Approved, $by, $note);
+    }
+
+    public function rejectFinally(User $by, string $note): void
+    {
+        $this->decide(LeaveStatus::Rejected, $by, $note);
+    }
+
+    protected function decide(LeaveStatus $status, User $by, null|string $note): void
+    {
+        $this->status = $status;
+        $this->review_note = $note;
+        $this->reviewer()->associate($by);
+        $this->reviewed_at = now();
+        $this->save();
+
+        Notify::employee($this->employee, new LeaveReviewed($this));
     }
 
     /**

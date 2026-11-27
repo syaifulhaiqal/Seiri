@@ -8,12 +8,16 @@
         </div>
         @if ($user->isAdmin())
             <div class="d-flex gap-2">
-                <a href="{{ route('admin.invoices.create') }}" class="btn btn-outline-primary">
-                    <i class="bi bi-plus-lg me-1"></i>{{ __('New invoice') }}
-                </a>
-                <a href="{{ route('admin.users.index') }}" class="btn btn-primary">
-                    <i class="bi bi-people me-1"></i>{{ __('Manage users') }}
-                </a>
+                @can('invoices.manage')
+                    <a href="{{ route('admin.invoices.create') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-lg me-1"></i>{{ __('New invoice') }}
+                    </a>
+                @endcan
+                @can('users.manage')
+                    <a href="{{ route('admin.users.index') }}" class="btn btn-primary">
+                        <i class="bi bi-people me-1"></i>{{ __('Manage users') }}
+                    </a>
+                @endcan
             </div>
         @endif
     </div>
@@ -63,17 +67,15 @@
             @endforeach
         </div>
 
-        @if ($financeStats['pending_claims'] || $financeStats['draft_payroll'])
-            <div class="alert alert-info d-flex flex-wrap gap-3 align-items-center">
-                <i class="bi bi-bell"></i>
-                @if ($financeStats['pending_claims'])
-                    <a href="{{ route('admin.claims.index', ['status' => 'pending']) }}">{{ trans_choice(':count expense claim to review|:count expense claims to review', $financeStats['pending_claims']) }}</a>
-                @endif
-                @if ($financeStats['draft_payroll'])
-                    <a href="{{ route('admin.payroll.index') }}">{{ trans_choice(':count payroll draft to approve|:count payroll drafts to approve', $financeStats['draft_payroll']) }}</a>
-                @endif
-            </div>
-        @endif
+    @endif
+
+    @if ($waiting)
+        <div class="alert alert-info d-flex flex-wrap gap-3 align-items-center">
+            <i class="bi bi-bell"></i>
+            @foreach ($waiting as $item)
+                <a href="{{ $item['url'] }}">{{ $item['label'] }}</a>
+            @endforeach
+        </div>
     @endif
 
     @if ($stats)
@@ -127,14 +129,14 @@
                         <dd class="col-7"><x-status-badge :user="$user" /></dd>
 
                         <dt class="col-5 text-secondary fw-normal">{{ __('Member since') }}</dt>
-                        <dd class="col-7 mb-0">{{ $user->created_at->format('j M Y') }}</dd>
+                        <dd class="col-7 mb-0">{{ $user->created_at->translatedFormat('j M Y') }}</dd>
                     </dl>
                 </div>
             </div>
         </div>
 
         <div class="col-lg-7">
-            @if ($user->isAdmin())
+            @if ($pendingLeave !== null)
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <h2>{{ __('Leave waiting for review') }}</h2>
@@ -163,6 +165,26 @@
                                 @endforelse
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            @elseif ($user->isAdmin())
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h2>{{ __('Your access') }}</h2>
+                    </div>
+                    <div class="card-body">
+                        @if ($user->isSuperAdmin())
+                            <p class="mb-0">{{ __('You are the super admin: you can use every module and decide what other admins can do under Roles & permissions.') }}</p>
+                        @elseif (! $user->adminRole || $user->adminRole->permissions->isEmpty())
+                            <p class="mb-0 text-secondary">{{ __('No modules have been given to you yet. Ask the super admin to assign you a role.') }}</p>
+                        @else
+                            <p>{{ __('Your role is :role. You can:', ['role' => $user->adminRole->name]) }}</p>
+                            <ul class="mb-0 small">
+                                @foreach ($user->adminRole->permissions as $permission)
+                                    <li>{{ $permission->label() }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
                     </div>
                 </div>
             @else

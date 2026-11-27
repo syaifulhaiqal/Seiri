@@ -72,9 +72,12 @@
                                                 <div class="small text-secondary"><i class="bi bi-chat-left-text me-1"></i>{{ $claim->review_note }}</div>
                                             @endif
                                         </td>
-                                        <td class="small text-nowrap">{{ $claim->date->format('j M Y') }}</td>
+                                        <td class="small text-nowrap">{{ $claim->date->translatedFormat('j M Y') }}</td>
                                         <td class="text-end text-nowrap">@money($claim->amount)</td>
-                                        <td><x-enum-badge :value="$claim->status" /></td>
+                                        <td>
+                                            <x-enum-badge :value="$claim->status" />
+                                            @include('partials.approval-waiting', ['item' => $claim])
+                                        </td>
                                         <td class="text-end pe-3 text-nowrap">
                                             @if ($claim->isPending())
                                                 <form method="POST" action="{{ route('claims.cancel', $claim) }}" x-data="formSubmit" x-on:submit="submit()">

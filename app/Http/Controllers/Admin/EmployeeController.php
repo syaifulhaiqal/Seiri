@@ -62,7 +62,7 @@ class EmployeeController extends Controller
 
     public function show(Employee $employee): View
     {
-        $employee->load(['department', 'user', 'payItems']);
+        $employee->load(['department', 'user', 'payItems', 'approvers.approver']);
 
         return view('admin.employees.show', [
             'employee' => $employee,
@@ -70,6 +70,7 @@ class EmployeeController extends Controller
             'leaveRequests' => $employee->leaveRequests()->with('leaveType')->latest('start_date')->take(10)->get(),
             'attendances' => $employee->attendances()->latest('date')->take(10)->get(),
             'payslips' => $employee->payslips()->with('payrollRun')->latest('id')->take(6)->get(),
+            'trainings' => $employee->trainings()->latest('start_date')->take(5)->get(),
         ]);
     }
 

@@ -32,7 +32,7 @@
                                     </div>
                                 </div>
                                 <x-form.textarea name="reason" bag="apply" :label="__('Reason')" rows="2" />
-                                <p class="small text-secondary">{{ __('Only working days count. Weekends inside the range are not deducted.') }}</p>
+                                <p class="small text-secondary">{{ __('Only working days count. Weekends and public holidays inside the range are not deducted.') }}</p>
 
                                 <x-submit-button>{{ __('Send request') }}</x-submit-button>
                             </form>
@@ -41,6 +41,22 @@
                         @endif
                     </div>
                 </div>
+
+                @if ($holidays->isNotEmpty())
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h2>{{ __('Upcoming public holidays') }}</h2>
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            @foreach ($holidays as $holiday)
+                                <li class="list-group-item d-flex justify-content-between gap-3 small">
+                                    <span>{{ $holiday->name }}</span>
+                                    <span class="text-secondary text-nowrap">{{ $holiday->date->translatedFormat('D, j M Y') }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             </div>
 
             <div class="col-lg-7">
@@ -72,7 +88,10 @@
                                         </td>
                                         <td>{{ $leave->leaveType->name }}</td>
                                         <td>{{ $leave->days }}</td>
-                                        <td><x-enum-badge :value="$leave->status" /></td>
+                                        <td>
+                                            <x-enum-badge :value="$leave->status" />
+                                            @include('partials.approval-waiting', ['item' => $leave])
+                                        </td>
                                         <td class="text-end pe-3 text-nowrap">
                                             @if ($leave->isPending())
                                                 <form method="POST" action="{{ route('leave.cancel', $leave) }}" x-data="formSubmit" x-on:submit="submit()">

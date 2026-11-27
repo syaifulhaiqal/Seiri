@@ -39,6 +39,7 @@ class EmployeeRequest extends FormRequest
     {
         /** @var Employee|null $employee */
         $employee = $this->route('employee');
+        $exceptPay = Rule::excludeIf(! $this->user()->can('payroll.manage'));
 
         return [
             'employee_no' => ['nullable', 'string', 'max:20', Rule::unique(Employee::class)->ignore($employee)],
@@ -56,10 +57,14 @@ class EmployeeRequest extends FormRequest
             ],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'address' => ['nullable', 'string', 'max:500'],
-            'basic_salary' => ['required', 'numeric', 'min:0', 'max:9999999'],
-            'monthly_pcb' => ['required', 'numeric', 'min:0', 'max:999999'],
-            'bank_name' => ['nullable', 'string', 'max:100'],
-            'bank_account_no' => ['nullable', 'string', 'max:30', 'regex:/^[0-9\s\-]+$/'],
+            'can_work_remotely' => ['sometimes', 'boolean'],
+            // Pay settings are only taken from admins who may manage payroll; others leave them as they are.
+            'basic_salary' => [$exceptPay, 'required', 'numeric', 'min:0', 'max:9999999'],
+            'monthly_pcb' => [$exceptPay, 'required', 'numeric', 'min:0', 'max:999999'],
+            'bank_name' => [$exceptPay, 'nullable', 'string', 'max:100'],
+            'bank_account_no' => [$exceptPay, 'nullable', 'string', 'max:30', 'regex:/^[0-9\s\-]+$/'],
+            'ic_no' => [$exceptPay, 'nullable', 'string', 'max:20'],
+            'tax_no' => [$exceptPay, 'nullable', 'string', 'max:20'],
             // Only regular user accounts that are not already linked to someone else.
             'user_id' => [
                 'nullable',

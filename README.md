@@ -1,4 +1,6 @@
-# NexOffice
+# Seiri
+
+*Seiri* (整理) is Japanese for "sort, put in order": the first of the 5S workplace principles.
 
 An office back-office system covering **HR**, **payroll**, **accounting / finance** and an **audit trail**. Built on the LAB stack conventions (**L**aravel + **A**lpine.js + Bootstrap 5), starting from the LAB auth starter: two roles (**admin** and **user**), email-activated accounts, a dashboard, a profile page and user management.
 
@@ -8,9 +10,16 @@ An office back-office system covering **HR**, **payroll**, **accounting / financ
 |--------|--------|
 | Accounts & users | Done |
 | HR: employees, departments, leave, attendance | Done |
-| Payroll: salaries, EPF / SOCSO / EIS / PCB, payslips | Done |
+| Public holidays, QR / remote clock-in, approval chains | Done |
+| Overtime, movements, training records | Done |
+| Payroll: salaries, overtime, EPF / SOCSO / EIS / PCB, payslips, EA forms | Done |
 | Finance: double-entry ledger, invoices, bills, expense claims, reports | Done |
+| Purchasing & stock: purchase requests, purchase orders, products, stock | Done |
+| Sales & CRM: leads, activities, quotations | Done |
 | Audit trail | Done |
+| Roles & permissions: super admin assigns admin roles per module | Done |
+| Notifications: bell menu and email | Done |
+| Bahasa Melayu / English switch and dark mode | Done |
 
 ## HR features
 
@@ -20,26 +29,40 @@ An office back-office system covering **HR**, **payroll**, **accounting / financ
 - **Departments**: name, short code and description. Deleting one keeps its employees, without a department.
 - **Leave types**: days per calendar year (0 = no limit) and paid / unpaid. A type with requests cannot be deleted.
 - **Leave requests**: pending first. The review page shows the employee's balance and who else in the department is away on those days. Approve, or reject with a reason.
-- **Attendance**: any day's present / late / on leave / absent list and counts, filterable by department. Late means clocking in after `HR_WORK_START` (default `09:00`, see `config/hr.php`).
+- **Attendance**: any day's present / late / on leave / holiday / absent list and counts, filterable by department and by how people clocked in (office QR, clock-in link or remote). The *How & where* column shows the method, work location, IP address and a Google Maps link for remote clock-ins. Today's board refreshes every minute, so HR can keep it open. Late means clocking in after `HR_WORK_START` (default `09:00`, see `config/hr.php`).
+- **Office QR screen** (Attendance → *Office QR screen*): show it full screen on a tablet or monitor at the entrance. Staff scan it with their phone camera to clock in or out. The code changes every `HR_QR_REFRESH_SECONDS` (30) seconds and each code stops working after `HR_QR_VALID_MINUTES` (5), so a photo of it is useless at home. Set `HR_OFFICE_IPS` (comma-separated, e.g. your office's public IP) to only accept scans from the office network.
+- **Clock-in links** (Attendance → *Clock-in links*): one link for all staff, for work from home or work outside the office. Send it in your staff group chat (or print its QR code); staff open it, sign in and clock in or out. It records their location (if the browser allows it, or always if you tick *Require location*), IP address and where they are working from. Give a link a last day for a WFH period, *Get a new link* if it reached the wrong people (the old one stops at once), or turn it off.
+- **Remote clock-in per employee**: tick *Can clock in remotely* on an employee who always works remotely. They get *Clock in remotely* on My attendance without needing a link.
+- **Public holidays**: a calendar per year. Holidays are not working days: leave does not deduct them, payroll does not count them and nobody is marked absent. The seeder adds the fixed-date Malaysian holidays; add Hari Raya, Chinese New Year, Deepavali and state holidays from the gazette each year.
+- **Approval chains**: on an employee, choose up to three approvers for leave, claims and overtime (staff with a login, such as their team lead and manager). Requests then go to level 1, then 2, then 3, and HR or finance only hears about it once the chain approves. Admins with the review permission can still decide directly, which closes the chain. Without a chain, requests go straight to HR or finance as before.
+- **Overtime**: review claims with the employee's attendance that day. Approved overtime is paid in the next payroll run at 1.5× (working day), 2× (rest day) or 3× (public holiday) the hourly rate, which is basic ÷ `HR_OVERTIME_DAYS_PER_MONTH` (26) ÷ `HR_OVERTIME_HOURS_PER_DAY` (8).
+- **Movements**: who is out of the office on a day, where and why, and who is still out.
+- **Training**: courses per employee with dates, hours, cost and status; totals per year.
 - The dashboard shows active employees, who has clocked in, who is on leave today and leave waiting for review.
 
 **Employees** (users linked to an employee record)
-- **My leave**: balance per leave type, apply for leave, cancel a pending request, see the reviewer's note.
-  Only working days count (weekends are skipped). Requests that overlap other leave, go over the balance or cross the new year are refused.
-- **My attendance**: clock in and out once a day; the last 30 days.
+- **My leave**: balance per leave type, apply for leave, cancel a pending request, see the reviewer's note and who it is waiting for.
+  Only working days count (weekends and public holidays are skipped). Requests that overlap other leave, go over the balance or cross the new year are refused.
+- **My attendance**: clock in and out once a day by scanning the office QR code, with a clock-in link from HR, or remotely if allowed; the last 30 days.
+- **My movements**: log going out during work hours and tap *Back* on return.
+- **My overtime**: claim overtime worked in the last 30 days (up to 12 hours per claim, one per day) and follow the decision.
+- **My training**: courses HR has recorded.
+- **Approvals** (team leads and managers in someone's approval chain): approve or reject what is waiting for them.
 - Users without an employee record see a notice asking them to contact HR.
 
 ## Payroll features
 
 **Admins**
 - **Pay settings per employee**: basic salary, monthly PCB (from the LHDN schedule), bank details, and recurring allowances or deductions.
-- **Payroll runs**: pick a month and a draft payslip is made for everyone paid that month. Pay is pro-rated for people who join or leave mid-month, and approved **unpaid leave** is deducted.
+- **Payroll runs**: pick a month and a draft payslip is made for everyone paid that month. Pay is pro-rated for people who join or leave mid-month, approved **unpaid leave** is deducted and approved **overtime** not yet paid is added. Overtime counts for SOCSO and EIS but not EPF.
 - Statutory contributions from `config/payroll.php`: EPF 11% employee and 13% / 12% employer (rounded up to the ringgit), SOCSO and EIS with a RM6,000 wage ceiling. **These are simplified percentage rates.** The official KWSP / PERKESO tables use wage bands, so check the figures before paying real salaries.
 - **Recalculate** a draft after changing pay settings, then **approve** it. Approving locks the payslips and posts the salary cost and payables to the ledger. **Mark paid** records the bank transfer.
-- Printable payslips. An employee with payslips or expense claims cannot be deleted; set them to Resigned instead.
+- Printable payslips, showing earnings, employee deductions, net pay and the employer's EPF / SOCSO / EIS contributions. An employee with payslips or expense claims cannot be deleted; set them to Resigned instead.
+
+- **EA forms**: every employee's yearly statement (salary, overtime, allowances, gross, PCB, EPF, SOCSO and EIS, plus a month-by-month table) from approved payroll, printable. Set `PAYROLL_EMPLOYER_NAME`, `PAYROLL_EMPLOYER_TAX_NO` (the E number) and `PAYROLL_EMPLOYER_ADDRESS`, and fill in each employee's IC and income tax numbers. It is a summary in the EA layout: copy the figures into the official LHDN form.
 
 **Employees**
-- **My payslips**: every approved month, printable.
+- **My payslips**: every approved month, printable, and **My EA forms** for each year.
 - **My expense claims**: claim with a category, amount and receipt (JPG / PNG / PDF, up to 5 MB, within 90 days), and cancel while it is pending.
 
 ## Finance features
@@ -54,12 +77,78 @@ All amounts post to a **double-entry ledger**. Every journal entry must balance,
 - **Reports**: profit & loss, balance sheet, trial balance and a general ledger per account with a running balance. All of them are printable and filter by date.
 - The admin dashboard shows cash and bank, what customers owe, what you owe suppliers, this month's profit, and claims or payroll waiting for you.
 
+## Purchasing & stock
+
+- **Purchase requests** (`PR-0001`): what is needed, why and by when, with estimated lines. Approvers (*Approve purchase requests*) are told and approve or reject with a note; raising a request does not let you approve it.
+- **Purchase orders** (`PO-0001`): raise one from an approved request (its lines are copied) or from scratch, to a supplier. Print it, *Mark as sent*, then *Mark as received* when the goods arrive. Cancelling an order frees its request to be ordered again.
+- **Create bill** turns a sent or received order into a draft supplier bill (booked to the first expense account; change the accounts before issuing).
+- **Products & stock**: SKU, unit, cost and sale price, and a reorder level. Receiving an order adds its product lines to stock; *Adjust stock* takes stock out (used, sold, damaged) or corrects a count, and never below zero. Each product shows its stock history, and the list shows stock value at cost and what is low.
+- Stock tracks **quantities and value only**: it is not posted to the ledger. The cost reaches the books through the supplier bill.
+
+## Sales & CRM
+
+- **Leads**: the opportunity, contact person and company, estimated value, owner, source and status (new → contacted → qualified → won or lost), with a pipeline count and value per status.
+- Log **calls, meetings, emails and notes** on a lead to keep its history.
+- **Make customer** creates the customer record (or reuses the one with the same email), so the lead can be quoted.
+- **Quotations** (`QT-0001`): lines from your products' sale prices or free text, with sales tax. Print it, mark it sent, then accepted or declined. Expired quotations are flagged.
+- **Create invoice** turns a quotation into a draft sales invoice (booked to Sales revenue) and marks its lead as won.
+
+**Not included**: point of sale (POS) and vouchers.
+
 ## Audit trail
 
-- Every create, update and delete on employees, leave, attendance, users, accounts, invoices, payments, claims, pay items and payroll runs is recorded with the user, time, IP address and the **old and new value of each changed field**. Passwords and other hidden fields show only that they changed.
+- Every create, update and delete on employees, leave, attendance, overtime, movements, training, holidays, clock-in links, approvers, users, accounts, invoices, payments, claims, pay items, payroll runs, products, stock movements, purchase requests and orders, leads and quotations is recorded with the user, time, IP address and the **old and new value of each changed field**. Passwords and other hidden fields show only that they changed.
 - Approvals, rejections, ledger postings, payments, voids, sign-ins, sign-outs and **failed sign-ins** (email only) are recorded too.
 - Filter by text, event, record type, user and date. Open an entry to see the before/after table and the record's full history, or **export CSV**.
 - Entries cannot be edited or deleted, not even from code: the model refuses.
+
+## Roles & permissions
+
+- **Super admin**: the owner (e.g. the CEO). Can use every module, and is the only one who manages roles and other admins. The account from `ADMIN_EMAIL` is the super admin.
+- **Admins** sign in at `/admin/login` and each has one **admin role**. The role decides which modules and actions they see. The menu, dashboard and buttons hide everything else, and the server refuses it too.
+- **Roles & permissions** (super admin only): create roles such as *HR manager*, *Payroll officer*, *Finance manager*, *Purchasing officer*, *Sales executive* and *Auditor*, and tick permissions per module. Examples are *view employees*, *prepare payroll*, *approve payroll*, *pay back claims* and *view the audit trail*. Manage permissions include view; approving payroll is separate from preparing it, approving claims is separate from paying them, and approving purchase requests is separate from raising them.
+- The seeder only creates roles that do not exist yet. On a database seeded before these modules, tick the new permissions (holidays, overtime, training, purchasing, stock, CRM) on the existing roles yourself.
+- Assign a role on **Users → Edit**. An admin without a role can sign in but sees no modules.
+- Admins with the *Manage user accounts* permission edit ordinary users only. They cannot edit admins or change anyone's role.
+- Salary and bank details are shown and saved only for admins who can prepare payroll.
+- Local demo admins (password `password123`): `hr@`, `payroll@`, `finance@` and `auditor@example.com`.
+
+## Notifications
+
+- The **bell** in the top bar shows the number of unread notifications and the latest five. Clicking one marks it read and opens what it is about. **See all notifications** lists the rest.
+- Who is told what:
+
+  | When | Who is told |
+  |------|-------------|
+  | An employee applies for leave, a claim or overtime and has an approval chain | The next approver in the chain; HR or finance once everyone approves |
+  | An employee applies for leave | Admins who can approve leave |
+  | Leave is approved or rejected | The employee (with the reason, if rejected) |
+  | An employee sends an expense claim | Admins who can review claims |
+  | A claim is approved, rejected or paid back | The employee |
+  | An employee claims overtime | Admins who can approve overtime |
+  | Overtime is approved or rejected | The employee |
+  | A purchase request is raised | Admins who can approve purchase requests |
+  | A purchase request is approved or rejected | Whoever raised it |
+  | Payroll for a month is prepared | Admins who can approve payroll |
+  | Payroll is approved | Every employee with a login: their payslip is ready |
+  | The super admin changes an admin's role | That admin |
+
+  Whoever caused it is not told about their own action.
+- Each notification is also **emailed**, unless the user turns off *Email me my notifications* on their Profile page. Emails go out in the user's chosen language.
+- Emails wait in the queue, so a **queue worker** must run: `php artisan queue:work` (or `composer run dev`, which starts one). The in-app copy shows straight away, without the worker.
+
+## Logo
+
+- The logo is the name in a diamond under a fading beam. In the app it is drawn in the text colour (`resources/views/components/logo.blade.php`), so it is black in light mode and white in dark mode.
+- Brand sheets for documents and print: `public/images/seiri-logo-light.svg` and `public/images/seiri-logo-dark.svg`.
+- Tab and home-screen icons: `public/favicon.svg`, `public/favicon.ico` and `public/apple-touch-icon.png`.
+- The name everywhere (titles, emails, footer, wordmark) comes from `APP_NAME` in `.env`.
+
+## Language and dark mode
+
+- The **EN / BM** switch in the top bar (and on the sign-in pages) changes the whole app between English and Bahasa Melayu: pages, messages, validation errors, dates and emails. The choice is saved on the account, so the next sign-in and emails use it too.
+- Translations are in `lang/ms.json` (app text) and `lang/ms/*.php` (Laravel's validation, auth and pagination messages). New text written with `__()` needs a line in `lang/ms.json`.
+- The **moon / sun** button switches dark mode. It is remembered in this browser and starts from the device setting. Payslips, invoices and reports always print on white.
 
 ## Account features
 
@@ -68,7 +157,7 @@ All amounts post to a **double-entry ledger**. Every journal entry must balance,
 - After registering, an **activation email** is sent and the user is sent back to the login page. They are **not** logged in.
 - Until the email link is clicked, the account is **inactive** and login is refused. The login page offers a "Resend link" form.
 - After login, the user lands on the **Dashboard**.
-- **Profile** page: update name, email and phone number, and change password (current password required).
+- **Profile** page: update name, email and phone number, turn notification emails on or off, and change password (current password required).
   Changing the email logs the user out until they confirm the new address.
 
 **Admins** (everything above, plus)
@@ -210,6 +299,12 @@ Pick one:
 - **Herd:** the folder is served automatically at `http://<folder-name>.test`.
 
 Set `APP_URL` in `.env` to the URL you actually use.
+
+Notification emails are queued. Run a worker next to the app so they are sent:
+
+```powershell
+php artisan queue:work
+```
 
 ### 10. Log in
 

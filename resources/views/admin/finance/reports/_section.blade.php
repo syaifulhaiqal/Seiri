@@ -1,5 +1,5 @@
 {{-- Rows of account => amount (in sen) with a total line. --}}
-<tr class="table-light">
+<tr class="table-subtle">
     <th class="ps-3" colspan="2">{{ $title }}</th>
 </tr>
 @forelse ($rows as $row)

@@ -89,7 +89,7 @@ class LoginTest extends TestCase
 
     public function test_admin_logs_in_only_on_admin_page(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $credentials = ['email' => $admin->email, 'password' => 'password123'];
 
         $this->post(route('login.store'), $credentials)->assertSessionHasErrors('email');
@@ -105,7 +105,7 @@ class LoginTest extends TestCase
     public function test_user_and_admin_can_be_signed_in_at_the_same_time(): void
     {
         $user = User::factory()->create();
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
 
         $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password123']);
         $this->post(route('admin.login.store'), ['email' => $admin->email, 'password' => 'password123']);

@@ -13,15 +13,15 @@
                 <x-enum-badge :value="$status" />
                 · {{ trans_choice(':count payslip|:count payslips', $run->employee_count) }}
                 @if ($run->approved_at)
-                    · {{ __('Approved by :name on :date', ['name' => $run->approver?->name ?? __('Unknown'), 'date' => $run->approved_at->format('j M Y')]) }}
+                    · {{ __('Approved by :name on :date', ['name' => $run->approver?->name ?? __('Unknown'), 'date' => $run->approved_at->translatedFormat('j M Y')]) }}
                 @endif
                 @if ($run->paid_at)
-                    · {{ __('Paid :date', ['date' => $run->paid_at->format('j M Y')]) }}
+                    · {{ __('Paid :date', ['date' => $run->paid_at->translatedFormat('j M Y')]) }}
                 @endif
             </p>
         </div>
         <div class="d-flex flex-wrap gap-2" x-data="confirmDelete">
-            @if ($run->isDraft())
+            @if ($run->isDraft() && auth()->user()->can('payroll.manage'))
                 <form method="POST" action="{{ route('admin.payroll.recalculate', $run) }}" x-data="formSubmit" x-on:submit="submit()">
                     @csrf
                     <button type="submit" class="btn btn-outline-secondary" x-bind:disabled="submitting">
@@ -31,14 +31,14 @@
                 <button type="button" class="btn btn-outline-danger" x-on:click="open(@js($run->periodLabel()), @js(route('admin.payroll.destroy', $run)))">
                     <i class="bi bi-trash me-1"></i>{{ __('Delete draft') }}
                 </button>
-                @if ($run->employee_count > 0)
+            @endif
+            @if ($run->isDraft() && $run->employee_count > 0 && auth()->user()->can('payroll.approve'))
                     <form method="POST" action="{{ route('admin.payroll.approve', $run) }}" x-data="formSubmit" x-on:submit="if (! confirm(@js(__('Approve payroll for :month? Payslips are locked and the cost is posted to the ledger.', ['month' => $run->periodLabel()])))) { $event.preventDefault() } else { submit() }">
                         @csrf
                         <button type="submit" class="btn btn-primary" x-bind:disabled="submitting">
                             <i class="bi bi-check2-circle me-1"></i>{{ __('Approve payroll') }}
                         </button>
                     </form>
-                @endif
             @endif
 
             <x-delete-modal :title="__('Delete draft payroll?')" :button="__('Delete draft')">
@@ -88,7 +88,8 @@
     </div>
 
     <div class="row g-4">
-        <div @class(['col-12' => $status !== \App\Enums\PayrollStatus::Approved, 'col-lg-8' => $status === \App\Enums\PayrollStatus::Approved])>
+        @php($canPay = $status === \App\Enums\PayrollStatus::Approved && auth()->user()->can('payroll.approve'))
+        <div @class(['col-12' => ! $canPay, 'col-lg-8' => $canPay])>
             <div class="card">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
@@ -132,7 +133,7 @@
             </div>
         </div>
 
-        @if ($status === \App\Enums\PayrollStatus::Approved)
+        @if ($canPay)
             <div class="col-lg-4">
                 <div class="card">
                     <div class="card-header">

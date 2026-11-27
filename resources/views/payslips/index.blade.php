@@ -4,6 +4,7 @@
             <h1>{{ __('My payslips') }}</h1>
             <p class="text-secondary mb-0">{{ __('Payslips appear here once the month\'s payroll is approved.') }}</p>
         </div>
+        <a href="{{ route('ea_forms.index') }}" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-text me-1"></i>{{ __('EA forms') }}</a>
     </div>
 
     @if (! $employee)

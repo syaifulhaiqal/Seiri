@@ -10,7 +10,7 @@
             </a>
             <h1 class="mt-2">{{ __(':number from :name', ['number' => $claim->number, 'name' => $employee->name]) }}</h1>
             <p class="text-secondary mb-0">
-                {{ __('Sent :date', ['date' => $claim->created_at->format('j M Y, g:i A')]) }} · <x-enum-badge :value="$claim->status" />
+                {{ __('Sent :date', ['date' => $claim->created_at->translatedFormat('j M Y, g:i A')]) }} · <x-enum-badge :value="$claim->status" />
             </p>
         </div>
     </div>
@@ -37,7 +37,7 @@
                         <dd class="col-sm-8 fw-semibold">@money($claim->amount)</dd>
 
                         <dt class="col-sm-4 text-secondary fw-normal">{{ __('Spent on') }}</dt>
-                        <dd class="col-sm-8">{{ $claim->date->format('j M Y') }}</dd>
+                        <dd class="col-sm-8">{{ $claim->date->translatedFormat('j M Y') }}</dd>
 
                         <dt class="col-sm-4 text-secondary fw-normal">{{ __('Category') }}</dt>
                         <dd class="col-sm-8">{{ $claim->account->displayName() }}</dd>
@@ -56,7 +56,7 @@
 
                         @if ($claim->reviewed_at)
                             <dt class="col-sm-4 text-secondary fw-normal">{{ __('Reviewed') }}</dt>
-                            <dd class="col-sm-8">{{ __(':name on :date', ['name' => $claim->reviewer?->name ?? __('Unknown'), 'date' => $claim->reviewed_at->format('j M Y')]) }}</dd>
+                            <dd class="col-sm-8">{{ __(':name on :date', ['name' => $claim->reviewer?->name ?? __('Unknown'), 'date' => $claim->reviewed_at->translatedFormat('j M Y')]) }}</dd>
 
                             <dt class="col-sm-4 text-secondary fw-normal">{{ __('Note') }}</dt>
                             <dd class="col-sm-8">{{ $claim->review_note ?: '—' }}</dd>
@@ -67,7 +67,7 @@
                             <dd class="col-sm-8 mb-0">
                                 <a href="{{ route('admin.journal_entries.show', $claim->journal_entry_id) }}">{{ __('Expense posting') }}</a>
                                 @if ($claim->reimbursement_entry_id)
-                                    · <a href="{{ route('admin.journal_entries.show', $claim->reimbursement_entry_id) }}">{{ __('Paid back :date', ['date' => $claim->reimbursed_at?->format('j M Y')]) }}</a>
+                                    · <a href="{{ route('admin.journal_entries.show', $claim->reimbursement_entry_id) }}">{{ __('Paid back :date', ['date' => $claim->reimbursed_at?->translatedFormat('j M Y')]) }}</a>
                                 @endif
                             </dd>
                         @endif
@@ -77,7 +77,9 @@
         </div>
 
         <div class="col-lg-5">
-            @if ($claim->isPending())
+            @include('partials.approval-chain', ['item' => $claim])
+
+            @if ($claim->isPending() && auth()->user()->can('claims.review'))
                 <div class="card mb-4">
                     <div class="card-header">
                         <h2>{{ __('Decision') }}</h2>
@@ -101,7 +103,7 @@
                         </form>
                     </div>
                 </div>
-            @elseif ($claim->status === \App\Enums\ClaimStatus::Approved)
+            @elseif ($claim->status === \App\Enums\ClaimStatus::Approved && auth()->user()->can('claims.reimburse'))
                 <div class="card mb-4">
                     <div class="card-header">
                         <h2>{{ __('Pay back') }}</h2>

@@ -39,7 +39,7 @@ class PayrollRunRequest extends FormRequest
 
     public function period(): Carbon
     {
-        return Carbon::createFromFormat('Y-m', $this->validated('period'))->startOfMonth();
+        return Carbon::createFromFormat('!Y-m', $this->validated('period'))->startOfMonth();
     }
 
     /**
@@ -54,7 +54,7 @@ class PayrollRunRequest extends FormRequest
                 }
 
                 if (PayrollRun::query()->whereDate('period', $this->period())->exists()) {
-                    $validator->errors()->add('period', __('There is already a payroll run for :month.', ['month' => $this->period()->format('F Y')]));
+                    $validator->errors()->add('period', __('There is already a payroll run for :month.', ['month' => $this->period()->translatedFormat('F Y')]));
                 }
             },
         ];

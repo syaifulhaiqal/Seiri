@@ -39,10 +39,23 @@ class UserFactory extends Factory
     /**
      * Indicate that the user is an admin.
      */
+    /**
+     * An admin. Give a role with ->for(Role::factory()->with(...), 'adminRole'); without one they can only sign in.
+     */
     public function admin(): static
     {
         return $this->state(fn (array $attributes) => [
             'role' => UserRole::Admin,
+        ]);
+    }
+
+    /**
+     * The owner of the system, with every permission.
+     */
+    public function superAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::SuperAdmin,
         ]);
     }
 

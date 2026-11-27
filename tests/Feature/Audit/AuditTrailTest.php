@@ -16,7 +16,7 @@ class AuditTrailTest extends TestCase
 
     public function test_changes_record_who_changed_which_fields(): void
     {
-        $admin = User::factory()->admin()->create(['name' => 'Nurul Admin']);
+        $admin = User::factory()->superAdmin()->create(['name' => 'Nurul Admin']);
         $employee = Employee::factory()->create(['job_title' => 'Clerk']);
 
         $this->actingAs($admin, 'admin')->put(route('admin.employees.update', $employee), [
@@ -77,7 +77,7 @@ class AuditTrailTest extends TestCase
 
     public function test_admin_can_filter_and_export_the_trail(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $employee = Employee::factory()->create(['name' => 'Farah Aziz']);
         AuditLog::record(AuditEvent::Approved, $employee, description: 'Leave approved');
 

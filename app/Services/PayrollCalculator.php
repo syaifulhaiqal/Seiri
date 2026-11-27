@@ -6,6 +6,7 @@ use App\Enums\LeaveStatus;
 use App\Enums\PayItemType;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
+use App\Models\OvertimeRequest;
 use App\Models\PayItem;
 use App\Support\Money;
 use Illuminate\Support\Carbon;
@@ -13,8 +14,8 @@ use Illuminate\Support\Carbon;
 /**
  * Works out one employee's pay for one month, in sen.
  *
- * Gross = basic (pro-rated for a partial month) + allowances − unpaid leave.
- * Net = gross − employee EPF, SOCSO, EIS, PCB and other deductions.
+ * Gross = basic (pro-rated for a partial month) + allowances + approved overtime − unpaid leave.
+ * Net = gross − employee EPF, SOCSO, EIS, PCB and other deductions. Overtime is not subject to EPF.
  */
 class PayrollCalculator
 {
@@ -51,10 +52,13 @@ class PayrollCalculator
         $unpaidDays = $this->unpaidLeaveDays($employee, $from, $to);
         $unpaidDeduction = min($basicPay, (int) round($salary * $unpaidDays / $workingDays));
 
-        $gross = $basicPay + $allowances - $unpaidDeduction;
+        $overtime = $this->overtime($employee, $salary, $monthEnd);
 
-        $epfEmployee = $this->epf($gross, config('payroll.epf.employee_rate'));
-        $epfEmployer = $this->epf($gross, $gross <= config('payroll.epf.threshold') * 100
+        $gross = $basicPay + $allowances + $overtime['pay'] - $unpaidDeduction;
+        $epfWage = $gross - $overtime['pay'];
+
+        $epfEmployee = $this->epf($epfWage, config('payroll.epf.employee_rate'));
+        $epfEmployer = $this->epf($epfWage, $epfWage <= config('payroll.epf.threshold') * 100
             ? config('payroll.epf.employer_rate')
             : config('payroll.epf.employer_rate_above_threshold'));
 
@@ -88,6 +92,8 @@ class PayrollCalculator
             'basic_salary' => Money::fromCents($salary),
             'basic_pay' => Money::fromCents($basicPay),
             'allowances' => Money::fromCents($allowances),
+            'overtime_hours' => number_format($overtime['hours'], 2, '.', ''),
+            'overtime_pay' => Money::fromCents($overtime['pay']),
             'unpaid_leave_deduction' => Money::fromCents($unpaidDeduction),
             'gross_pay' => Money::fromCents($gross),
             'epf_employee' => Money::fromCents($epfEmployee),
@@ -104,6 +110,26 @@ class PayrollCalculator
                 ->map(fn (array $line) => [...$line, 'amount' => Money::fromCents($line['amount'])])
                 ->values()
                 ->all(),
+            // Not a payslip column: PayrollService links these overtime requests to the payslip.
+            'overtime_ids' => $overtime['ids'],
+        ];
+    }
+
+    /**
+     * Approved overtime up to the end of the month that no payslip has paid yet.
+     * Hourly rate = monthly basic / days per month / hours per day, times the day type's rate.
+     *
+     * @return array{hours: float, pay: int, ids: array<int, int>}
+     */
+    public function overtime(Employee $employee, int $salary, Carbon $monthEnd): array
+    {
+        $requests = $employee->overtimeRequests()->payableUntil($monthEnd)->get();
+        $hoursInMonth = config('hr.overtime.days_per_month') * config('hr.overtime.hours_per_day');
+
+        return [
+            'hours' => (float) $requests->sum(fn (OvertimeRequest $overtime) => (float) $overtime->hours),
+            'pay' => (int) $requests->sum(fn (OvertimeRequest $overtime) => round($salary * (float) $overtime->hours * $overtime->day_type->rate() / $hoursInMonth)),
+            'ids' => $requests->modelKeys(),
         ];
     }
 

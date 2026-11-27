@@ -20,7 +20,7 @@ class AdminUserSeeder extends Seeder
         }
 
         $admin->name = config('admin.name');
-        $admin->role = UserRole::Admin;
+        $admin->role = UserRole::SuperAdmin;
         $admin->email_verified_at ??= now();
         $admin->save();
     }

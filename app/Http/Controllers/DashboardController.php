@@ -30,15 +30,40 @@ class DashboardController extends Controller
 
         return view('dashboard', [
             'user' => $user,
-            'stats' => $isAdmin ? $this->userStats() : null,
-            'hrStats' => $isAdmin ? $this->hrStats() : null,
-            'financeStats' => $isAdmin ? $this->financeStats() : null,
-            'pendingLeave' => $isAdmin
+            'stats' => $user->can('users.manage') ? $this->userStats() : null,
+            'hrStats' => $user->can('employees.view') ? $this->hrStats() : null,
+            'financeStats' => $user->can('reports.view') ? $this->financeStats() : null,
+            'waiting' => $isAdmin ? $this->waiting($user) : [],
+            'pendingLeave' => $user->can('leave.review')
                 ? LeaveRequest::query()->with(['employee', 'leaveType'])->where('status', LeaveStatus::Pending)->oldest()->take(5)->get()
-                : collect(),
+                : null,
             'employee' => $isAdmin ? null : $user->employee,
             'todayAttendance' => $isAdmin ? null : $user->employee?->attendances()->whereDate('date', today())->first(),
         ]);
+    }
+
+    /**
+     * Work waiting for this admin, limited to what their role lets them act on.
+     *
+     * @return array<int, array{label: string, url: string}>
+     */
+    protected function waiting(User $user): array
+    {
+        $items = [];
+
+        if ($user->can('claims.review') && $count = ExpenseClaim::query()->where('status', ClaimStatus::Pending)->count()) {
+            $items[] = ['label' => trans_choice(':count expense claim to review|:count expense claims to review', $count), 'url' => route('admin.claims.index', ['status' => 'pending'])];
+        }
+
+        if ($user->can('claims.reimburse') && $count = ExpenseClaim::query()->where('status', ClaimStatus::Approved)->count()) {
+            $items[] = ['label' => trans_choice(':count approved claim to pay back|:count approved claims to pay back', $count), 'url' => route('admin.claims.index', ['status' => 'approved'])];
+        }
+
+        if ($user->can('payroll.approve') && $count = PayrollRun::query()->where('status', PayrollStatus::Draft)->count()) {
+            $items[] = ['label' => trans_choice(':count payroll draft to approve|:count payroll drafts to approve', $count), 'url' => route('admin.payroll.index')];
+        }
+
+        return $items;
     }
 
     /**
@@ -79,7 +104,7 @@ class DashboardController extends Controller
     /**
      * Money figures for the admin dashboard, in ringgit.
      *
-     * @return array{cash: float, receivable: float, payable: float, profit: float, pending_claims: int, draft_payroll: int}
+     * @return array{cash: float, receivable: float, payable: float, profit: float}
      */
     protected function financeStats(): array
     {
@@ -93,8 +118,6 @@ class DashboardController extends Controller
             'receivable' => $outstanding(InvoiceType::Sales),
             'payable' => $outstanding(InvoiceType::Purchase),
             'profit' => (float) Money::fromCents($reports->profitAndLoss(today()->startOfMonth(), today())['net']),
-            'pending_claims' => ExpenseClaim::query()->where('status', ClaimStatus::Pending)->count(),
-            'draft_payroll' => PayrollRun::query()->where('status', PayrollStatus::Draft)->count(),
         ];
     }
 }

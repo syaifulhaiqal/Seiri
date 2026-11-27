@@ -125,7 +125,7 @@ class LeaveTest extends TestCase
 
     public function test_admin_can_approve_and_reject_with_a_reason(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $first = LeaveRequest::factory()->for($this->employee)->for($this->annual)->create();
         $second = LeaveRequest::factory()->for($this->employee)->for($this->annual)->create();
 
@@ -151,7 +151,7 @@ class LeaveTest extends TestCase
 
     public function test_admin_cannot_delete_a_leave_type_in_use(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         LeaveRequest::factory()->for($this->employee)->for($this->annual)->create();
 
         $this->actingAs($admin, 'admin')->delete(route('admin.leave_types.destroy', $this->annual))

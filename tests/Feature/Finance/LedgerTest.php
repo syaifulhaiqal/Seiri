@@ -25,7 +25,7 @@ class LedgerTest extends TestCase
 
         Carbon::setTestNow('2026-06-15 10:00:00');
         $this->seed(ChartOfAccountsSeeder::class);
-        $this->admin = User::factory()->admin()->create();
+        $this->admin = User::factory()->superAdmin()->create();
     }
 
     public function test_a_balanced_manual_entry_is_posted(): void

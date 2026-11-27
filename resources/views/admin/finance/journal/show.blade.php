@@ -23,7 +23,7 @@
                 <div class="card-body">
                     <dl class="row mb-0 small">
                         <dt class="col-5 text-secondary fw-normal">{{ __('Date') }}</dt>
-                        <dd class="col-7">{{ $entry->date->format('j M Y') }}</dd>
+                        <dd class="col-7">{{ $entry->date->translatedFormat('j M Y') }}</dd>
 
                         <dt class="col-5 text-secondary fw-normal">{{ __('Source') }}</dt>
                         <dd class="col-7">@include('partials.journal-source', ['entry' => $entry])</dd>
@@ -35,7 +35,7 @@
                         <dd class="col-7">{{ $entry->creator?->name ?? __('System') }}</dd>
 
                         <dt class="col-5 text-secondary fw-normal">{{ __('Posted at') }}</dt>
-                        <dd @class(['col-7', 'mb-0' => ! $entry->reverses && ! $entry->reversal])>{{ $entry->created_at->format('j M Y, g:i A') }}</dd>
+                        <dd @class(['col-7', 'mb-0' => ! $entry->reverses && ! $entry->reversal])>{{ $entry->created_at->translatedFormat('j M Y, g:i A') }}</dd>
 
                         @if ($entry->reverses)
                             <dt class="col-5 text-secondary fw-normal">{{ __('Reverses') }}</dt>

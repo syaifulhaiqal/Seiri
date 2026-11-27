@@ -10,10 +10,21 @@ $info: #0284c7;
 $page-bg: #f6f7fb;
 $body-color: #1e293b;
 $border-color: #e5e7eb;
+
+// Dark mode (the moon button in the top bar): slate surfaces on a darker page.
+$page-bg-dark: #0f172a;
+$body-bg-dark: #1e293b;
+$body-color-dark: #e2e8f0;
+$body-emphasis-color-dark: #f8fafc;
+$body-secondary-bg-dark: #334155;
+$body-tertiary-bg-dark: #263247;
+$border-color-dark: #334155;
 $border-radius: 0.5rem;
 $border-radius-lg: 0.75rem;
 $font-family-sans-serif: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 $headings-font-weight: 600;
+// Wide display font for the brand tagline, to sit with the extended letters of the logo.
+$tagline-font-family: 'Unbounded', 'Arial Black', $font-family-sans-serif;
 $input-btn-padding-y: 0.55rem;
 $input-btn-padding-x: 0.9rem;
 $card-border-color: $border-color;

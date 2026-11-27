@@ -82,6 +82,20 @@
                                 <x-form.input name="end_date" type="date" :label="__('Last working day')" :value="$employee->end_date?->toDateString()" :help="__('Required once the employee has resigned or been terminated.')" />
                             </div>
                         </div>
+                        <input type="hidden" name="can_work_remotely" value="0">
+                        <div class="form-check form-switch">
+                            <input
+                                type="checkbox"
+                                role="switch"
+                                id="can_work_remotely"
+                                name="can_work_remotely"
+                                value="1"
+                                @class(['form-check-input', 'is-invalid' => $errors->has('can_work_remotely')])
+                                @checked(old('can_work_remotely', $employee->can_work_remotely))
+                            >
+                            <label class="form-check-label" for="can_work_remotely">{{ __('Can clock in remotely (work from home)') }}</label>
+                        </div>
+                        <div class="form-text">{{ __('Off: clocks in only by scanning the office QR code. On: can also clock in from the My attendance page, with location shared.') }}</div>
                     </div>
                 </div>
             </div>
@@ -110,6 +124,7 @@
                     </div>
                 </div>
 
+                @can('payroll.manage')
                 <div class="card mb-4">
                     <div class="card-header">
                         <h2>{{ __('Pay') }}</h2>
@@ -119,8 +134,17 @@
                         <x-form.input name="monthly_pcb" type="number" step="0.01" min="0" :label="__('Monthly PCB (:currency)', ['currency' => config('finance.currency')])" :value="$employee->monthly_pcb" :help="__('Income tax deduction from the LHDN schedule or e-PCB calculator.')" />
                         <x-form.input name="bank_name" :label="__('Bank')" :value="$employee->bank_name" placeholder="Maybank" />
                         <x-form.input name="bank_account_no" :label="__('Bank account no.')" :value="$employee->bank_account_no" />
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <x-form.input name="ic_no" :label="__('IC / passport no.')" :value="$employee->ic_no" placeholder="900101-14-5678" />
+                            </div>
+                            <div class="col-sm-6">
+                                <x-form.input name="tax_no" :label="__('Income tax no.')" :value="$employee->tax_no" placeholder="IG 12345678090" :help="__('Printed on the EA form.')" />
+                            </div>
+                        </div>
                     </div>
                 </div>
+                @endcan
             </div>
         </div>
 

@@ -14,7 +14,7 @@
             <form method="GET" action="{{ route('admin.audit.index') }}" class="row g-2 align-items-center" x-data="autoSubmit">
                 <div class="col-md-6 col-xl-3">
                     <div class="input-group">
-                        <span class="input-group-text bg-white"><i class="bi bi-search text-secondary"></i></span>
+                        <span class="input-group-text bg-body"><i class="bi bi-search text-secondary"></i></span>
                         <input type="search" name="search" class="form-control border-start-0 ps-0" value="{{ $filters['search'] ?? '' }}" placeholder="{{ __('Search record, user or description') }}" aria-label="{{ __('Search') }}">
                     </div>
                 </div>
@@ -80,7 +80,7 @@
                         <tr>
                             <td class="ps-3 text-nowrap small">
                                 <a href="{{ route('admin.audit.show', $log) }}" class="text-decoration-none" title="{{ $log->created_at->toDayDateTimeString() }}">
-                                    {{ $log->created_at->format('j M Y, g:i:s A') }}
+                                    {{ $log->created_at->translatedFormat('j M Y, g:i:s A') }}
                                 </a>
                             </td>
                             <td class="small">

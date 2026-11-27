@@ -36,7 +36,7 @@
         font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: uppercase;
-        color: $secondary;
+        color: var(--bs-secondary-color);
         white-space: nowrap;
     }
 
@@ -55,6 +55,17 @@
         color: shade-color($color, 20%);
         background-color: rgba($color, 0.12);
     }
+
+    [data-bs-theme='dark'] .badge-soft-#{$name} {
+        color: tint-color($color, 40%);
+        background-color: rgba($color, 0.2);
+    }
+}
+
+// Section and total rows in tables (instead of .table-light, which stays light in dark mode).
+.table-subtle {
+    --bs-table-bg: var(--bs-tertiary-bg);
+    --bs-table-color: var(--bs-emphasis-color);
 }
 
 .form-label .required::after {
@@ -64,13 +75,13 @@
 
 // Show/hide button attached to password inputs, including in the invalid state.
 .input-group .btn-toggle-password {
-    border: $input-border-width solid $input-border-color;
-    color: $secondary;
-    background: $white;
+    border: $input-border-width solid var(--bs-border-color);
+    color: var(--bs-secondary-color);
+    background: var(--bs-body-bg);
 
     &:hover {
-        color: $body-color;
-        background: $gray-100;
+        color: var(--bs-emphasis-color);
+        background: var(--bs-tertiary-bg);
     }
 }
 
@@ -90,6 +101,7 @@
 }
 
 // Invoices, payslips and reports print as a clean sheet: no navigation, no card chrome.
+// Printing always uses light mode (see partials/theme-script.blade.php).
 @media print {
     body {
         background: $white;
@@ -108,4 +120,10 @@
     .document-sheet .card-body {
         padding: 0 !important;
     }
+}
+
+// Approve / reject box on the Approvals page.
+.approval-decision {
+    width: 100%;
+    max-width: 20rem;
 }

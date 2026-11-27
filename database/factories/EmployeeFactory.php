@@ -43,4 +43,14 @@ class EmployeeFactory extends Factory
             'end_date' => now()->subMonth(),
         ]);
     }
+
+    /**
+     * Allowed to clock in with the remote link (work from home).
+     */
+    public function remote(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'can_work_remotely' => true,
+        ]);
+    }
 }

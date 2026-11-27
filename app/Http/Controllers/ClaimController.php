@@ -5,15 +5,18 @@ namespace App\Http\Controllers;
 use App\Enums\AccountType;
 use App\Enums\AuditEvent;
 use App\Enums\ClaimStatus;
+use App\Enums\Permission;
 use App\Http\Requests\ClaimSubmitRequest;
 use App\Models\Account;
 use App\Models\ExpenseClaim;
+use App\Notifications\ClaimSubmitted;
+use App\Services\ApprovalFlow;
 use App\Support\DocumentNumber;
 use App\Support\Money;
+use App\Support\Notify;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -30,7 +33,7 @@ class ClaimController extends Controller
             'employee' => $employee,
             'categories' => Account::query()->active()->ofType(AccountType::Expense)->whereNull('system_key')->orderBy('name')->pluck('name', 'id'),
             'claims' => $employee
-                ? $employee->expenseClaims()->with('account')->orderByDesc('date')->orderByDesc('id')->paginate(10)
+                ? $employee->expenseClaims()->with(['account', 'approvals.approver'])->orderByDesc('date')->orderByDesc('id')->paginate(10)
                 : null,
         ]);
     }
@@ -57,6 +60,11 @@ class ClaimController extends Controller
             return $claim;
         });
 
+        // With an approval chain the first approver is told; otherwise finance is.
+        if (! app(ApprovalFlow::class)->start($claim)) {
+            Notify::admins(Permission::ClaimsReview, new ClaimSubmitted($claim));
+        }
+
         return to_route('claims.index')->with('status', __('Claim :number for :amount sent for approval.', [
             'number' => $claim->number,
             'amount' => Money::format($claim->amount),
@@ -73,6 +81,7 @@ class ClaimController extends Controller
 
         $claim->status = ClaimStatus::Cancelled;
         $claim->save();
+        app(ApprovalFlow::class)->close($claim);
         $claim->audit(AuditEvent::Cancelled);
 
         return to_route('claims.index')->with('status', __('Claim :number cancelled.', ['number' => $claim->number]));
@@ -81,8 +90,7 @@ class ClaimController extends Controller
     public function receipt(Request $request, ExpenseClaim $claim): StreamedResponse
     {
         abort_unless($claim->employee_id === $request->user()->employee?->id, 403);
-        abort_unless($claim->receipt_path && Storage::disk('local')->exists($claim->receipt_path), 404);
 
-        return Storage::disk('local')->response($claim->receipt_path, $claim->receipt_name);
+        return $claim->receiptResponse();
     }
 }

@@ -1,7 +1,7 @@
 <x-layouts.app :title="__('Trial balance')">
     @include('admin.finance.reports._header', [
         'heading' => __('Trial balance'),
-        'subheading' => __('As of :date', ['date' => $asOf->format('j M Y')]),
+        'subheading' => __('As of :date', ['date' => $asOf->translatedFormat('j M Y')]),
     ])
 
     <div class="row">

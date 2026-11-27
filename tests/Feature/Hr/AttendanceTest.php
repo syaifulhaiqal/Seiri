@@ -18,7 +18,7 @@ class AttendanceTest extends TestCase
     {
         Carbon::setTestNow('2026-03-04 09:20:00');
         $user = User::factory()->create();
-        $employee = Employee::factory()->create(['user_id' => $user->id]);
+        $employee = Employee::factory()->remote()->create(['user_id' => $user->id]);
 
         $this->actingAs($user)->post(route('attendance.clock_in'))->assertRedirect(route('attendance.index'));
         $this->actingAs($user)->post(route('attendance.clock_in'))->assertSessionHasErrors('delete');
@@ -36,7 +36,7 @@ class AttendanceTest extends TestCase
     public function test_cannot_clock_out_before_clocking_in(): void
     {
         $user = User::factory()->create();
-        Employee::factory()->create(['user_id' => $user->id]);
+        Employee::factory()->remote()->create(['user_id' => $user->id]);
 
         $this->actingAs($user)->post(route('attendance.clock_out'))->assertSessionHasErrors('delete');
     }
@@ -44,7 +44,7 @@ class AttendanceTest extends TestCase
     public function test_former_employees_cannot_clock_in(): void
     {
         $user = User::factory()->create();
-        Employee::factory()->resigned()->create(['user_id' => $user->id]);
+        Employee::factory()->resigned()->remote()->create(['user_id' => $user->id]);
 
         $this->actingAs($user)->post(route('attendance.clock_in'))->assertForbidden();
     }
@@ -52,7 +52,7 @@ class AttendanceTest extends TestCase
     public function test_admin_sees_present_late_on_leave_and_absent_for_a_day(): void
     {
         Carbon::setTestNow('2026-03-04 15:00:00');
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $onTime = Employee::factory()->create(['name' => 'On Time']);
         $late = Employee::factory()->create(['name' => 'Running Late']);
         $away = Employee::factory()->create(['name' => 'Away Today']);

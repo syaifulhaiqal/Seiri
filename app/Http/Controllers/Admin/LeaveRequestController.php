@@ -7,9 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\LeaveReviewRequest;
 use App\Models\Department;
 use App\Models\LeaveRequest;
+use App\Services\ApprovalFlow;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -45,7 +47,7 @@ class LeaveRequestController extends Controller
 
     public function show(LeaveRequest $leaveRequest): View
     {
-        $leaveRequest->load(['employee.department', 'leaveType', 'reviewer']);
+        $leaveRequest->load(['employee.department', 'leaveType', 'reviewer', 'approvals.approver']);
 
         return view('admin.leave-requests.show', [
             'leaveRequest' => $leaveRequest,
@@ -70,11 +72,14 @@ class LeaveRequestController extends Controller
 
         $approve = $request->validated('decision') === 'approve';
 
-        $leaveRequest->status = $approve ? LeaveStatus::Approved : LeaveStatus::Rejected;
-        $leaveRequest->review_note = $request->validated('review_note');
-        $leaveRequest->reviewer()->associate($request->user());
-        $leaveRequest->reviewed_at = now();
-        $leaveRequest->save();
+        // HR's decision is final, even if approvers in the employee's chain have not decided yet.
+        DB::transaction(function () use ($approve, $leaveRequest, $request): void {
+            app(ApprovalFlow::class)->close($leaveRequest);
+
+            $approve
+                ? $leaveRequest->approveFinally($request->user(), $request->validated('review_note'))
+                : $leaveRequest->rejectFinally($request->user(), $request->validated('review_note'));
+        });
 
         return to_route('admin.leave_requests.index', ['status' => LeaveStatus::Pending->value])->with('status', $approve
             ? __('Leave for :name approved.', ['name' => $leaveRequest->employee->name])

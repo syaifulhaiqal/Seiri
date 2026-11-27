@@ -54,6 +54,12 @@
                                 <td class="text-end pe-0 text-nowrap">{{ \App\Support\Money::format($item['amount'], false) }}</td>
                             </tr>
                         @endforeach
+                        @if ((float) $payslip->overtime_pay > 0)
+                            <tr>
+                                <td class="ps-0">{{ __('Overtime (:hours h)', ['hours' => (float) $payslip->overtime_hours]) }}</td>
+                                <td class="text-end pe-0 text-nowrap">{{ \App\Support\Money::format($payslip->overtime_pay, false) }}</td>
+                            </tr>
+                        @endif
                         @if ((float) $payslip->unpaid_leave_deduction > 0)
                             <tr>
                                 <td class="ps-0">{{ trans_choice('Unpaid leave (:count day)|Unpaid leave (:count days)', $payslip->unpaid_leave_days) }}</td>
@@ -109,12 +115,36 @@
             <span class="fs-4 fw-bold">@money($payslip->net_pay)</span>
         </div>
 
-        <div class="small text-secondary mt-3">
-            {{ __('Employer contributions: EPF :epf · SOCSO :socso · EIS :eis', [
-                'epf' => \App\Support\Money::format($payslip->epf_employer),
-                'socso' => \App\Support\Money::format($payslip->socso_employer),
-                'eis' => \App\Support\Money::format($payslip->eis_employer),
-            ]) }}
+        <table class="table table-sm mt-4 mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-0">{{ __('Employer contributions') }}</th>
+                    <th class="text-end pe-0 fw-normal small text-secondary">{{ __('Paid by the company, not deducted from your pay') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ([
+                    __('EPF (employer)') => $payslip->epf_employer,
+                    __('SOCSO (employer)') => $payslip->socso_employer,
+                    __('EIS (employer)') => $payslip->eis_employer,
+                ] as $label => $amount)
+                    <tr>
+                        <td class="ps-0">{{ $label }}</td>
+                        <td class="text-end pe-0 text-nowrap">{{ \App\Support\Money::format($amount, false) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr class="fw-semibold">
+                    <td class="ps-0">{{ __('Total employer contributions') }}</td>
+                    <td class="text-end pe-0 text-nowrap">@money($payslip->employerContributions())</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="row small text-secondary mt-3 g-1">
+            <div class="col-sm-6">{{ __('EPF this month (you + employer): :amount', ['amount' => \App\Support\Money::format((float) $payslip->epf_employee + (float) $payslip->epf_employer)]) }}</div>
+            <div class="col-sm-6 text-sm-end">{{ __('Total cost to company: :amount', ['amount' => \App\Support\Money::format((float) $payslip->gross_pay + $payslip->employerContributions())]) }}</div>
         </div>
     </div>
 </div>

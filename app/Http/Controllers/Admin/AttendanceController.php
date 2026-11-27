@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\ClockMethod;
 use App\Enums\LeaveStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
@@ -16,7 +17,8 @@ use Illuminate\View\View;
 class AttendanceController extends Controller
 {
     /**
-     * Who was in on one day: every active employee with their clock times and status.
+     * Who was in on one day: every active employee with their clock times, how and where they clocked in
+     * (office QR or remote, with location), and status.
      */
     public function index(Request $request): View
     {
@@ -24,6 +26,7 @@ class AttendanceController extends Controller
             'date' => ['nullable', 'date'],
             'department' => ['nullable', 'integer'],
             'status' => ['nullable', Rule::enum(AttendanceStatus::class)],
+            'method' => ['nullable', Rule::enum(ClockMethod::class)],
         ]);
 
         $date = Carbon::parse($filters['date'] ?? today())->startOfDay();
@@ -32,6 +35,9 @@ class AttendanceController extends Controller
             ->active()
             ->whereDate('join_date', '<=', $date)
             ->when($filters['department'] ?? null, fn ($query, int $id) => $query->where('department_id', $id))
+            ->when($filters['method'] ?? null, fn ($query, string $method) => $query->whereHas('attendances', fn ($query) => $query
+                ->whereDate('date', $date)
+                ->where(fn ($query) => $query->where('clock_in_method', $method)->orWhere('clock_out_method', $method))))
             ->with(['department', 'attendances' => fn ($query) => $query->whereDate('date', $date)])
             ->orderBy('name')
             ->get();
@@ -50,7 +56,9 @@ class AttendanceController extends Controller
         ]);
 
         $counts = collect(AttendanceStatus::cases())
-            ->mapWithKeys(fn (AttendanceStatus $status) => [$status->value => $rows->where('status', $status)->count()]);
+            ->mapWithKeys(fn (AttendanceStatus $status) => [$status->value => $rows->where('status', $status)->count()])
+            // The holiday card shows only on a holiday.
+            ->reject(fn (int $count, string $status) => $status === AttendanceStatus::Holiday->value && $count === 0);
 
         if ($filters['status'] ?? null) {
             $rows = $rows->where('status', AttendanceStatus::from($filters['status']))->values();

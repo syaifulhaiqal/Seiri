@@ -30,7 +30,7 @@ class EmployeeManagementTest extends TestCase
 
     public function test_admin_can_list_and_filter_employees(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $finance = Department::factory()->create(['name' => 'Finance']);
         Employee::factory()->for($finance)->create(['name' => 'Aisyah Rahman']);
         Employee::factory()->resigned()->create(['name' => 'Daniel Lim']);
@@ -51,7 +51,7 @@ class EmployeeManagementTest extends TestCase
 
     public function test_admin_can_add_an_employee_with_a_generated_number_and_linked_login(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $login = User::factory()->create();
         $department = Department::factory()->create();
 
@@ -76,7 +76,7 @@ class EmployeeManagementTest extends TestCase
 
     public function test_an_admin_login_or_an_already_linked_login_cannot_be_linked(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $taken = Employee::factory()->create(['user_id' => User::factory()->create()->id]);
 
         $data = [
@@ -96,7 +96,7 @@ class EmployeeManagementTest extends TestCase
 
     public function test_leaving_an_employee_requires_a_last_working_day(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $employee = Employee::factory()->create();
 
         $this->actingAs($admin, 'admin')->put(route('admin.employees.update', $employee), [
@@ -125,7 +125,7 @@ class EmployeeManagementTest extends TestCase
 
     public function test_admin_can_delete_an_employee(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $employee = Employee::factory()->create();
 
         $this->actingAs($admin, 'admin')->delete(route('admin.employees.destroy', $employee))
@@ -136,7 +136,7 @@ class EmployeeManagementTest extends TestCase
 
     public function test_admin_can_manage_departments(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
 
         $this->actingAs($admin, 'admin')->post(route('admin.departments.store'), ['name' => 'Finance', 'code' => 'fin'])
             ->assertRedirect(route('admin.departments.index'));

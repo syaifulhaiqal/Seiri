@@ -53,24 +53,25 @@ class AuditLogController extends Controller
     public function export(Request $request): StreamedResponse
     {
         $query = $this->query($this->filters($request));
+        $showPay = $request->user()->can('payroll.view');
 
-        return response()->streamDownload(function () use ($query): void {
+        return response()->streamDownload(function () use ($query, $showPay): void {
             $out = fopen('php://output', 'w');
             fputcsv($out, ['Time', 'User', 'Event', 'Record type', 'Record', 'Description', 'Changes', 'IP address']);
 
-            $query->lazyById(500, 'id')->each(function (AuditLog $log) use ($out): void {
-                fputcsv($out, [
+            $query->lazyById(500, 'id')->each(function (AuditLog $log) use ($out, $showPay): void {
+                fputcsv($out, array_map($this->safeCell(...), [
                     $log->created_at->toDateTimeString(),
                     $log->user_name ?? 'System',
                     $log->event->label(),
                     AuditLog::typeLabel($log->subject_type),
                     $log->subject_label,
                     $log->description,
-                    collect($log->changes())
+                    collect($log->changes($showPay))
                         ->map(fn (array $change, string $field) => $field . ': ' . json_encode($change['old']) . ' → ' . json_encode($change['new']))
                         ->implode('; '),
                     $log->ip_address,
-                ]);
+                ]));
             });
 
             fclose($out);
@@ -109,5 +110,14 @@ class AuditLogController extends Controller
             ->when($filters['to'] ?? null, fn ($query, string $to) => $query->whereDate('created_at', '<=', $to))
             ->orderByDesc('created_at')
             ->orderByDesc('id');
+    }
+
+    /**
+     * Spreadsheets run a cell that starts with =, +, - or @ as a formula. Names and descriptions come from users,
+     * so such cells get a leading apostrophe to be shown as text.
+     */
+    protected function safeCell(mixed $value): mixed
+    {
+        return is_string($value) && preg_match('/^[=+\-@\t\r]/', $value) ? "'" . $value : $value;
     }
 }

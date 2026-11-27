@@ -83,7 +83,7 @@ class LeaveApplyRequest extends FormRequest
                 $days = LeaveRequest::workingDays($start, $end);
 
                 if ($days === 0) {
-                    $validator->errors()->add('end_date', __('These dates fall on a weekend. Choose at least one working day.'));
+                    $validator->errors()->add('end_date', __('These dates fall on a weekend or public holiday. Choose at least one working day.'));
 
                     return;
                 }

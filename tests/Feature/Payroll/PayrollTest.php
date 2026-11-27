@@ -12,6 +12,7 @@ use App\Models\PayrollRun;
 use App\Models\User;
 use App\Services\FinancialReports;
 use App\Services\PayrollCalculator;
+use App\Support\Money;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -33,7 +34,7 @@ class PayrollTest extends TestCase
         Carbon::setTestNow('2026-03-31 17:00:00');
         $this->march = Carbon::parse('2026-03-01');
         $this->seed(ChartOfAccountsSeeder::class);
-        $this->admin = User::factory()->admin()->create();
+        $this->admin = User::factory()->superAdmin()->create();
     }
 
     public function test_statutory_deductions_and_pay_items_are_worked_out(): void
@@ -138,7 +139,11 @@ class PayrollTest extends TestCase
         $this->actingAs($this->admin, 'admin')->post(route('admin.payroll.approve', $run));
 
         $this->actingAs($user, 'web')->get(route('payslips.index'))->assertOk()->assertSee('March 2026');
-        $this->actingAs($user, 'web')->get(route('payslips.show', $myPayslip))->assertOk()->assertSee('Net pay');
+        $this->actingAs($user, 'web')->get(route('payslips.show', $myPayslip))
+            ->assertOk()
+            ->assertSee('Net pay')
+            ->assertSee('Employer contributions')
+            ->assertSee(Money::format($myPayslip->employerContributions()));
         $this->actingAs($user, 'web')->get(route('payslips.show', $otherPayslip))->assertNotFound();
     }
 
@@ -150,6 +155,16 @@ class PayrollTest extends TestCase
         $this->actingAs($this->admin, 'admin')->delete(route('admin.employees.destroy', $employee))->assertSessionHasErrors('delete');
 
         $this->assertModelExists($employee);
+    }
+
+    public function test_an_earlier_month_is_prepared_correctly_at_the_end_of_a_long_month(): void
+    {
+        Employee::factory()->create(['join_date' => '2025-01-01', 'basic_salary' => '3000.00']);
+
+        // On 31 March, "2026-02" must not overflow into March.
+        $this->actingAs($this->admin, 'admin')->post(route('admin.payroll.store'), ['period' => '2026-02'])->assertSessionHasNoErrors();
+
+        $this->assertSame('2026-02-01', PayrollRun::query()->sole()->period->toDateString());
     }
 
     protected function balance(string $key): int

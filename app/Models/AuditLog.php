@@ -142,17 +142,28 @@ class AuditLog extends Model
     }
 
     /**
-     * Fields that changed, with their old and new values.
+     * Pay, bank and identity fields, by record type. Only admins who can see payroll see their values.
+     */
+    public const array PAY_FIELDS = [
+        'employee' => ['basic_salary', 'monthly_pcb', 'bank_name', 'bank_account_no', 'ic_no', 'tax_no'],
+        'pay_item' => ['amount'],
+    ];
+
+    /**
+     * Fields that changed, with their old and new values. Without $showPay, pay fields show only that they changed.
      *
      * @return array<string, array{old: mixed, new: mixed}>
      */
-    public function changes(): array
+    public function changes(bool $showPay = true): array
     {
         $old = $this->old_values ?? [];
         $new = $this->new_values ?? [];
+        $masked = $showPay ? [] : (self::PAY_FIELDS[$this->subject_type] ?? []);
 
         return collect(array_keys($old + $new))
-            ->mapWithKeys(fn (string $field) => [$field => ['old' => $old[$field] ?? null, 'new' => $new[$field] ?? null]])
+            ->mapWithKeys(fn (string $field) => [$field => in_array($field, $masked, true)
+                ? ['old' => '••••••', 'new' => __('(changed)')]
+                : ['old' => $old[$field] ?? null, 'new' => $new[$field] ?? null]])
             ->all();
     }
 

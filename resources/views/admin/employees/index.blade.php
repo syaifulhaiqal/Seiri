@@ -4,9 +4,11 @@
             <h1>{{ __('Employees') }}</h1>
             <p class="text-secondary mb-0">{{ trans_choice(':count employee|:count employees', $employees->total()) }}</p>
         </div>
-        <a href="{{ route('admin.employees.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i>{{ __('Add employee') }}
-        </a>
+        @can('employees.manage')
+            <a href="{{ route('admin.employees.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>{{ __('Add employee') }}
+            </a>
+        @endcan
     </div>
 
     <div class="card">
@@ -14,7 +16,7 @@
             <form method="GET" action="{{ route('admin.employees.index') }}" class="row g-2 align-items-center" x-data="autoSubmit">
                 <div class="col-md-6 col-lg-5">
                     <div class="input-group">
-                        <span class="input-group-text bg-white"><i class="bi bi-search text-secondary"></i></span>
+                        <span class="input-group-text bg-body"><i class="bi bi-search text-secondary"></i></span>
                         <input type="search" name="search" class="form-control border-start-0 ps-0" value="{{ $filters['search'] ?? '' }}" placeholder="{{ __('Search name, email, number or job title') }}" aria-label="{{ __('Search') }}">
                     </div>
                 </div>
@@ -72,14 +74,16 @@
                             <td>{{ $employee->department?->name ?? '—' }}</td>
                             <td><x-enum-badge :value="$employee->employment_type" /></td>
                             <td><x-enum-badge :value="$employee->status" /></td>
-                            <td class="text-secondary small text-nowrap">{{ $employee->join_date->format('j M Y') }}</td>
+                            <td class="text-secondary small text-nowrap">{{ $employee->join_date->translatedFormat('j M Y') }}</td>
                             <td class="text-end pe-3 text-nowrap">
                                 <a href="{{ route('admin.employees.show', $employee) }}" class="btn btn-sm btn-outline-secondary" title="{{ __('View') }}">
                                     <i class="bi bi-eye"></i><span class="visually-hidden">{{ __('View') }}</span>
                                 </a>
-                                <a href="{{ route('admin.employees.edit', $employee) }}" class="btn btn-sm btn-outline-secondary" title="{{ __('Edit') }}">
-                                    <i class="bi bi-pencil"></i><span class="visually-hidden">{{ __('Edit') }}</span>
-                                </a>
+                                @can('employees.manage')
+                                    <a href="{{ route('admin.employees.edit', $employee) }}" class="btn btn-sm btn-outline-secondary" title="{{ __('Edit') }}">
+                                        <i class="bi bi-pencil"></i><span class="visually-hidden">{{ __('Edit') }}</span>
+                                    </a>
+                                @endcan
                             </td>
                         </tr>
                     @empty

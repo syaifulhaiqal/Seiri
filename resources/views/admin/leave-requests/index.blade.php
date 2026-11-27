@@ -13,7 +13,7 @@
             <form method="GET" action="{{ route('admin.leave_requests.index') }}" class="row g-2 align-items-center" x-data="autoSubmit">
                 <div class="col-md-6 col-lg-5">
                     <div class="input-group">
-                        <span class="input-group-text bg-white"><i class="bi bi-search text-secondary"></i></span>
+                        <span class="input-group-text bg-body"><i class="bi bi-search text-secondary"></i></span>
                         <input type="search" name="search" class="form-control border-start-0 ps-0" value="{{ $filters['search'] ?? '' }}" placeholder="{{ __('Search employee name or number') }}" aria-label="{{ __('Search') }}">
                     </div>
                 </div>

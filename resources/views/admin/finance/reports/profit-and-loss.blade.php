@@ -5,7 +5,7 @@
 <x-layouts.app :title="__('Profit & loss')">
     @include('admin.finance.reports._header', [
         'heading' => __('Profit & loss'),
-        'subheading' => __(':from to :to', ['from' => $from->format('j M Y'), 'to' => $to->format('j M Y')]),
+        'subheading' => __(':from to :to', ['from' => $from->translatedFormat('j M Y'), 'to' => $to->translatedFormat('j M Y')]),
     ])
 
     <div class="row">

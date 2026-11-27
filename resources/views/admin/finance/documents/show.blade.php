@@ -61,8 +61,8 @@
                         </div>
                         <div class="text-md-end">
                             <div class="fs-5 fw-semibold">{{ $invoice->number }}</div>
-                            <div class="small text-secondary">{{ __('Date') }}: {{ $invoice->issue_date->format('j M Y') }}</div>
-                            <div class="small text-secondary">{{ __('Due') }}: {{ $invoice->due_date->format('j M Y') }}</div>
+                            <div class="small text-secondary">{{ __('Date') }}: {{ $invoice->issue_date->translatedFormat('j M Y') }}</div>
+                            <div class="small text-secondary">{{ __('Due') }}: {{ $invoice->due_date->translatedFormat('j M Y') }}</div>
                             @if ($invoice->reference)
                                 <div class="small text-secondary">{{ __('Ref.') }}: {{ $invoice->reference }}</div>
                             @endif
@@ -171,7 +171,7 @@
                         <li class="list-group-item">
                             <div class="d-flex justify-content-between">
                                 <span class="fw-medium">@money($payment->amount)</span>
-                                <span class="small text-secondary">{{ $payment->date->format('j M Y') }}</span>
+                                <span class="small text-secondary">{{ $payment->date->translatedFormat('j M Y') }}</span>
                             </div>
                             <div class="small text-secondary">
                                 {{ $payment->account->name }}{{ $payment->method ? ' · ' . $payment->method->label() : '' }}{{ $payment->reference ? ' · ' . $payment->reference : '' }}
@@ -194,14 +194,14 @@
                     @if ($invoice->journalEntry)
                         <p class="mb-2">
                             {{ __('Posted as') }} <a href="{{ route('admin.journal_entries.show', $invoice->journalEntry) }}">{{ $invoice->journalEntry->number }}</a>
-                            {{ __('on :date', ['date' => $invoice->issued_at?->format('j M Y')]) }}.
+                            {{ __('on :date', ['date' => $invoice->issued_at?->translatedFormat('j M Y')]) }}.
                         </p>
                     @else
                         <p class="text-secondary mb-2">{{ __('Not posted yet. Drafts do not affect the accounts.') }}</p>
                     @endif
 
                     @if ($invoice->voided_at)
-                        <p class="text-secondary mb-0">{{ __('Voided on :date. The posting was reversed.', ['date' => $invoice->voided_at->format('j M Y')]) }}</p>
+                        <p class="text-secondary mb-0">{{ __('Voided on :date. The posting was reversed.', ['date' => $invoice->voided_at->translatedFormat('j M Y')]) }}</p>
                     @endif
                 </div>
             </div>

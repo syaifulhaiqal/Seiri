@@ -29,6 +29,23 @@
                         />
                         <x-form.input name="phone_number" type="tel" :label="__('Phone number')" :value="$user->phone_number" autocomplete="tel" placeholder="012-345 6789" />
 
+                        <div class="mb-3">
+                            <input type="hidden" name="email_notifications" value="0">
+                            <div class="form-check form-switch">
+                                <input
+                                    type="checkbox"
+                                    role="switch"
+                                    id="email_notifications"
+                                    name="email_notifications"
+                                    value="1"
+                                    @class(['form-check-input', 'is-invalid' => $errors->has('email_notifications')])
+                                    @checked(old('email_notifications', $user->email_notifications))
+                                >
+                                <label class="form-check-label" for="email_notifications">{{ __('Email me my notifications') }}</label>
+                            </div>
+                            <div class="form-text">{{ __('Leave, claims and payslip updates always show under the bell. Turn this on to get them by email too.') }}</div>
+                        </div>
+
                         <x-submit-button>{{ __('Save changes') }}</x-submit-button>
                     </form>
                 </div>

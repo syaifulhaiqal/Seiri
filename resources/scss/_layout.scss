@@ -1,18 +1,33 @@
+// Colours that change with dark mode. Bootstrap's own --bs-* variables cover the rest.
+:root,
+[data-bs-theme='light'] {
+    --app-page-bg: #{$page-bg};
+}
+
+[data-bs-theme='dark'] {
+    --app-page-bg: #{$page-bg-dark};
+}
+
 body {
-    background-color: $page-bg;
+    background-color: var(--app-page-bg);
 }
 
 // Guest (login / register) layout
 .auth-shell {
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 2rem 1rem;
-    background:
-        radial-gradient(60rem 30rem at 10% -10%, rgba($primary, 0.12), transparent 60%),
-        radial-gradient(50rem 30rem at 110% 110%, rgba($info, 0.1), transparent 60%),
-        $page-bg;
+    padding: 4.5rem 1rem 1.5rem;
+    background: var(--app-page-bg);
+}
+
+// Language and dark mode controls on the sign-in pages.
+.auth-preferences {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1;
 }
 
 .auth-card {
@@ -20,26 +35,87 @@ body {
     max-width: 440px;
 }
 
-.auth-brand {
+// Logo: the Seiri diamond (components/logo.blade.php) in currentColor, with the SEIRI wordmark beside it.
+.brand {
     display: inline-flex;
     align-items: center;
-    gap: 0.6rem;
-    font-weight: 700;
-    font-size: 1.15rem;
-    color: $body-color;
+    gap: 0.65rem;
+    color: var(--bs-emphasis-color);
     text-decoration: none;
+
+    &:hover {
+        color: var(--bs-emphasis-color);
+    }
 }
 
-.brand-mark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+.brand-logo {
+    flex-shrink: 0;
     width: 2.25rem;
     height: 2.25rem;
-    border-radius: 0.6rem;
-    background: $primary;
-    color: $white;
-    font-size: 1.1rem;
+
+    &.brand-logo-lg {
+        width: 3rem;
+        height: 3rem;
+    }
+}
+
+.brand-wordmark {
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: 0.22em;
+    line-height: 1;
+    text-transform: uppercase;
+
+    &.brand-wordmark-lg {
+        font-size: 1.4rem;
+    }
+}
+
+// Sign-in pages: brand panel beside the form on wide screens.
+.auth-layout {
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 6rem;
+    width: 100%;
+}
+
+.auth-brand-panel {
+    flex-direction: column;
+    width: 15rem;
+    color: var(--bs-emphasis-color);
+
+    .auth-logo {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+}
+
+.brand-tagline {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-top: 1rem;
+    overflow: visible;
+
+    text {
+        font-family: $tagline-font-family;
+        font-size: 14px;
+        font-weight: 600;
+        fill: currentColor;
+    }
+}
+
+.auth-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 1rem;
+    margin-top: 2rem;
+    font-size: 0.8rem;
+    color: var(--bs-secondary-color);
 }
 
 // Signed-in layout
@@ -48,32 +124,32 @@ body {
     align-items: center;
     gap: 1rem;
     padding: 0.75rem 1.5rem;
-    background: $white;
-    border-bottom: 1px solid $border-color;
+    background: var(--bs-body-bg);
+    border-bottom: 1px solid var(--bs-border-color);
 }
 
 .app-sidebar {
     --bs-offcanvas-width: 15rem;
-    background-color: $white !important;
-    border-right: 1px solid $border-color;
+    background-color: var(--bs-body-bg) !important;
+    border-right: 1px solid var(--bs-border-color);
 
     .nav-link {
         display: flex;
         align-items: center;
         gap: 0.65rem;
-        color: $secondary;
+        color: var(--bs-secondary-color);
         font-weight: 500;
         border-radius: $border-radius;
         padding: 0.5rem 0.8rem;
         white-space: nowrap;
 
         &:hover {
-            color: $body-color;
-            background: $gray-100;
+            color: var(--bs-emphasis-color);
+            background: var(--bs-tertiary-bg);
         }
 
         &.active {
-            color: $primary;
+            color: var(--bs-primary-text-emphasis);
             background: rgba($primary, 0.08);
         }
     }
@@ -84,12 +160,63 @@ body {
         font-weight: 600;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        color: $secondary;
+        color: var(--bs-secondary-color);
+    }
+
+    // A section heading that folds its links away.
+    .nav-group-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        margin-top: 0.25rem;
+        padding-top: 0.6rem;
+        padding-bottom: 0.6rem;
+        border: 0;
+        border-radius: $border-radius;
+        background: none;
+        text-align: start;
+
+        &:hover {
+            color: var(--bs-emphasis-color);
+            background: var(--bs-tertiary-bg);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--bs-primary);
+            outline-offset: -2px;
+        }
+    }
+
+    .nav-group-chevron {
+        font-size: 0.7rem;
+        transition: transform 0.2s ease;
+    }
+
+    .nav-group-toggle[aria-expanded='false'] .nav-group-chevron {
+        transform: rotate(-90deg);
+    }
+
+    .nav-group-items {
+        padding-top: 0.25rem;
+    }
+
+    // The brand stays put; the links scroll when the menu is taller than the screen.
+    .app-sidebar-nav {
+        flex: 1 1 auto;
+        flex-wrap: nowrap;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding-bottom: 1rem;
+        scrollbar-width: thin;
     }
 
     @include media-breakpoint-up(lg) {
         position: sticky;
         top: 0;
+        display: flex;
+        flex-direction: column;
         flex-shrink: 0;
         width: 15rem;
         height: 100vh;
@@ -106,9 +233,46 @@ body {
             .nav-heading {
                 padding: 0.5rem 0;
                 margin: 0.5rem 0.8rem 0;
-                border-top: 1px solid $border-color;
+                border-top: 1px solid var(--bs-border-color);
+            }
+
+            // Icons only: every section stays open and the headings are just dividers.
+            .nav-group-toggle {
+                width: auto;
+                pointer-events: none;
+                border-radius: 0;
+            }
+
+            .nav-group-items {
+                display: flex !important;
             }
         }
+    }
+}
+
+.app-footer {
+    padding: 1rem 0;
+    font-size: 0.8rem;
+    color: var(--bs-secondary-color);
+    border-top: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+}
+
+// Tutorial page
+.help-toc {
+    position: sticky;
+    top: 5rem;
+}
+
+.help-section {
+    scroll-margin-top: 5rem;
+}
+
+.help-steps li {
+    margin-bottom: 0.5rem;
+
+    &:last-child {
+        margin-bottom: 0;
     }
 }
 
@@ -121,7 +285,7 @@ body {
     height: 2.25rem;
     border-radius: 50%;
     background: rgba($primary, 0.12);
-    color: $primary;
+    color: var(--bs-primary-text-emphasis);
     font-weight: 600;
     font-size: 0.85rem;
     text-transform: uppercase;
@@ -144,5 +308,76 @@ body {
     h1 {
         font-size: 1.5rem;
         margin-bottom: 0.15rem;
+    }
+}
+
+// Bell menu in the top bar, and the notifications page.
+.notification-badge {
+    position: absolute;
+    top: -0.2rem;
+    right: -0.45rem;
+    font-size: 0.6rem;
+}
+
+.notification-menu {
+    width: 22rem;
+    max-width: calc(100vw - 2rem);
+    overflow: hidden;
+}
+
+.notification-item {
+    padding: 0.75rem 1rem;
+
+    &:hover {
+        background: var(--bs-tertiary-bg);
+    }
+
+    &.is-unread {
+        background: rgba($primary, 0.05);
+
+        &:hover {
+            background: rgba($primary, 0.1);
+        }
+    }
+}
+
+.notification-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+}
+
+.notification-dot {
+    flex-shrink: 0;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-top: 0.4rem;
+    border-radius: 50%;
+    background: $primary;
+}
+
+// Office clock-in QR screen (admin/attendance/qr).
+.qr-kiosk-code svg {
+    display: block;
+    width: min(70vw, 360px);
+    height: auto;
+}
+
+.qr-kiosk:fullscreen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0;
+
+    .qr-kiosk-code svg {
+        width: min(70vh, 80vw);
+    }
+
+    .qr-kiosk-fullscreen {
+        display: none;
     }
 }

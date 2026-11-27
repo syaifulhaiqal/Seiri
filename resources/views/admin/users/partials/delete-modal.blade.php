@@ -11,7 +11,7 @@
                 </span>
                 <h2 class="h5" id="delete-user-title">{{ __('Delete user?') }}</h2>
                 <p class="text-secondary mb-0">
-                    {{ __('This permanently deletes') }} <strong x-text="name"></strong>{{ __('\'s account. This cannot be undone.') }}
+                    {{ __('This permanently deletes the account of') }} <strong x-text="name"></strong>. {{ __('This cannot be undone.') }}
                 </p>
             </div>
             <div class="modal-footer border-0 pt-0 justify-content-center">

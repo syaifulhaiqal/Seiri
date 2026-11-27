@@ -18,7 +18,7 @@ class Payslip extends Model
     protected function casts(): array
     {
         $money = collect([
-            'basic_salary', 'basic_pay', 'allowances', 'unpaid_leave_deduction', 'gross_pay',
+            'basic_salary', 'basic_pay', 'allowances', 'overtime_pay', 'unpaid_leave_deduction', 'gross_pay',
             'epf_employee', 'socso_employee', 'eis_employee', 'pcb', 'other_deductions',
             'total_deductions', 'net_pay', 'epf_employer', 'socso_employer', 'eis_employer',
         ])->mapWithKeys(fn (string $column) => [$column => 'decimal:2'])->all();
@@ -29,6 +29,7 @@ class Payslip extends Model
             'working_days' => 'integer',
             'days_worked' => 'integer',
             'unpaid_leave_days' => 'integer',
+            'overtime_hours' => 'decimal:2',
         ];
     }
 

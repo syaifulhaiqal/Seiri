@@ -7,11 +7,13 @@ use App\Enums\EmployeeStatus;
 use App\Enums\PayrollStatus;
 use App\Models\Account;
 use App\Models\Employee;
+use App\Models\OvertimeRequest;
 use App\Models\PayrollRun;
 use App\Models\User;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -33,6 +35,7 @@ class PayrollService
         }
 
         DB::transaction(function () use ($run): void {
+            OvertimeRequest::query()->whereIn('payslip_id', $run->payslips()->select('id'))->update(['payslip_id' => null]);
             $run->payslips()->delete();
 
             foreach ($this->payableEmployees($run->period) as $employee) {
@@ -42,9 +45,14 @@ class PayrollService
                     continue;
                 }
 
+                $overtimeIds = Arr::pull($attributes, 'overtime_ids');
+
                 $payslip = $run->payslips()->make($attributes);
                 $payslip->employee_id = $employee->id;
                 $payslip->save();
+
+                // Claimed by this payslip so the next month does not pay it again.
+                OvertimeRequest::query()->whereKey($overtimeIds)->update(['payslip_id' => $payslip->id]);
             }
 
             $this->refreshTotals($run);

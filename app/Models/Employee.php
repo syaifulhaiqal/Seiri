@@ -23,7 +23,8 @@ use Illuminate\Support\Collection;
 #[Fillable([
     'employee_no', 'department_id', 'name', 'email', 'phone_number', 'job_title',
     'employment_type', 'status', 'join_date', 'end_date', 'date_of_birth', 'address',
-    'basic_salary', 'monthly_pcb', 'bank_name', 'bank_account_no',
+    'basic_salary', 'monthly_pcb', 'bank_name', 'bank_account_no', 'can_work_remotely',
+    'ic_no', 'tax_no',
 ])]
 class Employee extends Model
 {
@@ -43,6 +44,7 @@ class Employee extends Model
             'date_of_birth' => 'date',
             'basic_salary' => 'decimal:2',
             'monthly_pcb' => 'decimal:2',
+            'can_work_remotely' => 'boolean',
         ];
     }
 
@@ -82,6 +84,40 @@ class Employee extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * @return HasMany<OvertimeRequest, $this>
+     */
+    public function overtimeRequests(): HasMany
+    {
+        return $this->hasMany(OvertimeRequest::class);
+    }
+
+    /**
+     * @return HasMany<Movement, $this>
+     */
+    public function movements(): HasMany
+    {
+        return $this->hasMany(Movement::class);
+    }
+
+    /**
+     * @return HasMany<Training, $this>
+     */
+    public function trainings(): HasMany
+    {
+        return $this->hasMany(Training::class);
+    }
+
+    /**
+     * The employee's approval chains (who approves their leave, claims and overtime).
+     *
+     * @return HasMany<Approver, $this>
+     */
+    public function approvers(): HasMany
+    {
+        return $this->hasMany(Approver::class)->orderBy('type')->orderBy('level');
     }
 
     /**

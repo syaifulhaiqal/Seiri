@@ -22,6 +22,7 @@ class ProfileUpdateRequest extends FormRequest
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
             'phone_number' => ['nullable', 'string', 'max:20', 'regex:/^\+?[0-9\s\-]{7,20}$/'],
+            'email_notifications' => ['sometimes', 'boolean'],
         ];
     }
 

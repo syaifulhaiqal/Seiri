@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UserUpdateRequest;
+use App\Models\Role;
 use App\Models\User;
+use App\Notifications\AdminRoleChanged;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -22,6 +25,7 @@ class UserController extends Controller
         ]);
 
         $users = User::query()
+            ->with('adminRole')
             ->search($filters['search'] ?? null)
             ->when($filters['role'] ?? null, fn ($query, string $role) => $query->where('role', $role))
             ->when($filters['status'] ?? null, fn ($query, string $status) => match ($status) {
@@ -40,8 +44,11 @@ class UserController extends Controller
 
     public function edit(User $user): View
     {
+        Gate::authorize('users.edit', $user);
+
         return view('admin.users.edit', [
             'user' => $user,
+            'roles' => Role::query()->orderBy('name')->pluck('name', 'id'),
         ]);
     }
 
@@ -54,7 +61,11 @@ class UserController extends Controller
             'email' => $data['email'],
             'phone_number' => $data['phone_number'] ?? null,
         ]);
-        $user->role = UserRole::from($data['role']);
+
+        if ($request->assignsRoles()) {
+            $user->role = UserRole::from($data['role']);
+            $user->admin_role_id = $user->role === UserRole::Admin ? $data['admin_role_id'] : null;
+        }
 
         if ($request->boolean('is_active') !== $user->hasVerifiedEmail()) {
             $user->email_verified_at = $request->boolean('is_active') ? now() : null;
@@ -65,7 +76,12 @@ class UserController extends Controller
         }
 
         $emailChanged = $user->isDirty('email');
+        $accessChanged = $user->isAdmin() && $user->isDirty(['role', 'admin_role_id']);
         $user->save();
+
+        if ($accessChanged) {
+            $user->notify(new AdminRoleChanged($user->isSuperAdmin() ? null : $user->load('adminRole')->adminRole));
+        }
 
         if ($emailChanged && ! $user->hasVerifiedEmail()) {
             $user->sendEmailVerificationNotification();
@@ -76,6 +92,8 @@ class UserController extends Controller
 
     public function destroy(Request $request, User $user): RedirectResponse
     {
+        Gate::authorize('users.edit', $user);
+
         if ($user->is($request->user())) {
             return back()->withErrors(['delete' => __('You cannot delete your own account.')]);
         }

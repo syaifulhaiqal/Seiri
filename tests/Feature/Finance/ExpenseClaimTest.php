@@ -80,7 +80,7 @@ class ExpenseClaimTest extends TestCase
 
     public function test_approving_posts_the_expense_and_paying_back_clears_it(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $claim = ExpenseClaim::factory()->for($this->employee)->create(['account_id' => $this->travel->id, 'amount' => '120.00']);
         $bank = Account::system('bank');
 
@@ -103,7 +103,7 @@ class ExpenseClaimTest extends TestCase
 
     public function test_rejecting_needs_a_note_and_posts_nothing(): void
     {
-        $admin = User::factory()->admin()->create();
+        $admin = User::factory()->superAdmin()->create();
         $claim = ExpenseClaim::factory()->for($this->employee)->create(['account_id' => $this->travel->id]);
 
         $this->actingAs($admin, 'admin')->put(route('admin.claims.review', $claim), ['decision' => 'reject'])->assertSessionHasErrors('review_note');

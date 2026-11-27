@@ -10,7 +10,7 @@
             </a>
             <h1 class="mt-2">{{ __(':type for :name', ['type' => $leaveRequest->leaveType->name, 'name' => $employee->name]) }}</h1>
             <p class="text-secondary mb-0">
-                {{ __('Requested :date', ['date' => $leaveRequest->created_at->format('j M Y, g:i A')]) }} · <x-enum-badge :value="$leaveRequest->status" />
+                {{ __('Requested :date', ['date' => $leaveRequest->created_at->translatedFormat('j M Y, g:i A')]) }} · <x-enum-badge :value="$leaveRequest->status" />
             </p>
         </div>
     </div>
@@ -48,7 +48,7 @@
                         @if ($leaveRequest->reviewed_at)
                             <dt class="col-sm-4 text-secondary fw-normal">{{ __('Reviewed') }}</dt>
                             <dd class="col-sm-8">
-                                {{ __(':name on :date', ['name' => $leaveRequest->reviewer?->name ?? __('Unknown'), 'date' => $leaveRequest->reviewed_at->format('j M Y')]) }}
+                                {{ __(':name on :date', ['name' => $leaveRequest->reviewer?->name ?? __('Unknown'), 'date' => $leaveRequest->reviewed_at->translatedFormat('j M Y')]) }}
                             </dd>
 
                             <dt class="col-sm-4 text-secondary fw-normal">{{ __('Note') }}</dt>
@@ -90,6 +90,8 @@
         </div>
 
         <div class="col-lg-5">
+            @include('partials.approval-chain', ['item' => $leaveRequest])
+
             @include('partials.leave-balances', ['balances' => $balances, 'year' => $leaveRequest->start_date->year])
 
             @if ($employee->department)
