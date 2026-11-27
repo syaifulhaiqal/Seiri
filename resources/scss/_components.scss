@@ -50,7 +50,7 @@
     padding: 0.4em 0.65em;
 }
 
-@each $name, $color in ('primary': $primary, 'secondary': $secondary, 'success': $success, 'warning': $warning, 'danger': $danger) {
+@each $name, $color in ('primary': $primary, 'secondary': $secondary, 'success': $success, 'warning': $warning, 'danger': $danger, 'info': $info) {
     .badge-soft-#{$name} {
         color: shade-color($color, 20%);
         background-color: rgba($color, 0.12);

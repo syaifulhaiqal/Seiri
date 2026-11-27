@@ -3,19 +3,16 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
      */
     public function run(): void
     {
-        $this->call(AdminUserSeeder::class);
+        $this->call([AdminUserSeeder::class, LeaveTypeSeeder::class]);
 
         if (! app()->isLocal()) {
             return;
@@ -29,5 +26,7 @@ class DatabaseSeeder extends Seeder
 
         User::factory(15)->create();
         User::factory(4)->unverified()->create();
+
+        $this->call(HrDemoSeeder::class);
     }
 }

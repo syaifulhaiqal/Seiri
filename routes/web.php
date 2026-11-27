@@ -37,9 +37,31 @@ foreach (['web' => '', 'admin' => 'admin'] as $guard => $area) {
 
             Route::post('logout', [Controllers\Auth\LoginController::class, 'destroy'])->name('logout');
 
+            if ($guard === 'web') {
+                // Employee self-service.
+                Route::get('leave', [Controllers\LeaveController::class, 'index'])->name('leave.index');
+                Route::post('leave', [Controllers\LeaveController::class, 'store'])->name('leave.store');
+                Route::put('leave/{leaveRequest}/cancel', [Controllers\LeaveController::class, 'cancel'])->name('leave.cancel');
+
+                Route::get('attendance', [Controllers\AttendanceController::class, 'index'])->name('attendance.index');
+                Route::post('attendance/clock-in', [Controllers\AttendanceController::class, 'clockIn'])->name('attendance.clock_in');
+                Route::post('attendance/clock-out', [Controllers\AttendanceController::class, 'clockOut'])->name('attendance.clock_out');
+            }
+
             if ($guard === 'admin') {
                 Route::middleware('admin')->group(function () {
                     Route::resource('users', Controllers\Admin\UserController::class)->only(['index', 'edit', 'update', 'destroy']);
+
+                    // HR
+                    Route::resource('employees', Controllers\Admin\EmployeeController::class);
+                    Route::resource('departments', Controllers\Admin\DepartmentController::class)->except('show');
+                    Route::resource('leave-types', Controllers\Admin\LeaveTypeController::class)->except('show')->names('leave_types');
+
+                    Route::get('leave-requests', [Controllers\Admin\LeaveRequestController::class, 'index'])->name('leave_requests.index');
+                    Route::get('leave-requests/{leaveRequest}', [Controllers\Admin\LeaveRequestController::class, 'show'])->name('leave_requests.show');
+                    Route::put('leave-requests/{leaveRequest}/review', [Controllers\Admin\LeaveRequestController::class, 'review'])->name('leave_requests.review');
+
+                    Route::get('attendance', [Controllers\Admin\AttendanceController::class, 'index'])->name('attendance.index');
                 });
             }
         });

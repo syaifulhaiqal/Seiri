@@ -44,6 +44,33 @@
                         <i class="bi bi-people"></i><span class="nav-text">{{ __('Users') }}</span>
                     </a>
                 </li>
+
+                <li class="nav-heading"><span class="nav-text">{{ __('Human resources') }}</span></li>
+                @foreach ([
+                    ['route' => 'admin.employees', 'label' => __('Employees'), 'icon' => 'bi-person-badge'],
+                    ['route' => 'admin.departments', 'label' => __('Departments'), 'icon' => 'bi-diagram-3'],
+                    ['route' => 'admin.leave_requests', 'label' => __('Leave requests'), 'icon' => 'bi-calendar2-check'],
+                    ['route' => 'admin.attendance', 'label' => __('Attendance'), 'icon' => 'bi-clock-history'],
+                    ['route' => 'admin.leave_types', 'label' => __('Leave types'), 'icon' => 'bi-sliders'],
+                ] as $item)
+                    <li class="nav-item">
+                        <a @class(['nav-link', 'active' => request()->routeIs($item['route'] . '.*')]) href="{{ route($item['route'] . '.index') }}" title="{{ $item['label'] }}">
+                            <i class="bi {{ $item['icon'] }}"></i><span class="nav-text">{{ $item['label'] }}</span>
+                        </a>
+                    </li>
+                @endforeach
+            @else
+                <li class="nav-heading"><span class="nav-text">{{ __('My work') }}</span></li>
+                @foreach ([
+                    ['route' => 'leave', 'label' => __('My leave'), 'icon' => 'bi-calendar2-check'],
+                    ['route' => 'attendance', 'label' => __('My attendance'), 'icon' => 'bi-clock-history'],
+                ] as $item)
+                    <li class="nav-item">
+                        <a @class(['nav-link', 'active' => request()->routeIs($item['route'] . '.*')]) href="{{ route($item['route'] . '.index') }}" title="{{ $item['label'] }}">
+                            <i class="bi {{ $item['icon'] }}"></i><span class="nav-text">{{ $item['label'] }}</span>
+                        </a>
+                    </li>
+                @endforeach
             @endif
         </ul>
     </aside>

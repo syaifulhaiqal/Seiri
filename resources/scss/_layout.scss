@@ -78,6 +78,15 @@ body {
         }
     }
 
+    .nav-heading {
+        padding: 1rem 0.8rem 0.35rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: $secondary;
+    }
+
     @include media-breakpoint-up(lg) {
         position: sticky;
         top: 0;
@@ -92,6 +101,12 @@ body {
 
             .nav-text {
                 display: none;
+            }
+
+            .nav-heading {
+                padding: 0.5rem 0;
+                margin: 0.5rem 0.8rem 0;
+                border-top: 1px solid $border-color;
             }
         }
     }

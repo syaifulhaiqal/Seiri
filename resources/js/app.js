@@ -12,6 +12,8 @@ window.Alpine = Alpine;
 Alpine.data('formSubmit', formSubmit);
 Alpine.data('passwordField', passwordField);
 Alpine.data('deleteUser', deleteUser);
+// Same modal behaviour, named for any record (see components/delete-modal.blade.php).
+Alpine.data('confirmDelete', deleteUser);
 Alpine.data('autoSubmit', autoSubmit);
 
 Alpine.start();
