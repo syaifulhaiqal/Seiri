@@ -1,0 +1,133 @@
+body {
+    background-color: $page-bg;
+}
+
+// Guest (login / register) layout
+.auth-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background:
+        radial-gradient(60rem 30rem at 10% -10%, rgba($primary, 0.12), transparent 60%),
+        radial-gradient(50rem 30rem at 110% 110%, rgba($info, 0.1), transparent 60%),
+        $page-bg;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 440px;
+}
+
+.auth-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: $body-color;
+    text-decoration: none;
+}
+
+.brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.6rem;
+    background: $primary;
+    color: $white;
+    font-size: 1.1rem;
+}
+
+// Signed-in layout
+.app-topbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: $white;
+    border-bottom: 1px solid $border-color;
+}
+
+.app-sidebar {
+    --bs-offcanvas-width: 15rem;
+    background-color: $white !important;
+    border-right: 1px solid $border-color;
+
+    .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        color: $secondary;
+        font-weight: 500;
+        border-radius: $border-radius;
+        padding: 0.5rem 0.8rem;
+        white-space: nowrap;
+
+        &:hover {
+            color: $body-color;
+            background: $gray-100;
+        }
+
+        &.active {
+            color: $primary;
+            background: rgba($primary, 0.08);
+        }
+    }
+
+    @include media-breakpoint-up(lg) {
+        position: sticky;
+        top: 0;
+        flex-shrink: 0;
+        width: 15rem;
+        height: 100vh;
+        overflow: hidden;
+        transition: width 0.2s ease;
+
+        .sidebar-collapsed & {
+            width: 4.75rem;
+
+            .nav-text {
+                display: none;
+            }
+        }
+    }
+}
+
+.avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: rgba($primary, 0.12);
+    color: $primary;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+
+    &.avatar-lg {
+        width: 3.5rem;
+        height: 3.5rem;
+        font-size: 1.2rem;
+    }
+}
+
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    h1 {
+        font-size: 1.5rem;
+        margin-bottom: 0.15rem;
+    }
+}

@@ -1,0 +1,90 @@
+.card {
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.card-header {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+
+    h2 {
+        font-size: 1.05rem;
+        margin: 0;
+    }
+}
+
+.stat-card {
+    .stat-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 0.65rem;
+        font-size: 1.25rem;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+}
+
+.table {
+    th {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: $secondary;
+        white-space: nowrap;
+    }
+
+    td {
+        vertical-align: middle;
+    }
+}
+
+.badge-soft {
+    font-weight: 500;
+    padding: 0.4em 0.65em;
+}
+
+@each $name, $color in ('primary': $primary, 'secondary': $secondary, 'success': $success, 'warning': $warning, 'danger': $danger) {
+    .badge-soft-#{$name} {
+        color: shade-color($color, 20%);
+        background-color: rgba($color, 0.12);
+    }
+}
+
+.form-label .required::after {
+    content: ' *';
+    color: $danger;
+}
+
+// Show/hide button attached to password inputs, including in the invalid state.
+.input-group .btn-toggle-password {
+    border: $input-border-width solid $input-border-color;
+    color: $secondary;
+    background: $white;
+
+    &:hover {
+        color: $body-color;
+        background: $gray-100;
+    }
+}
+
+.input-group:has(.is-invalid) {
+    .form-control.is-invalid {
+        background-image: none;
+        padding-right: $input-padding-x;
+    }
+
+    .btn-toggle-password {
+        border-color: $form-feedback-invalid-color;
+    }
+}
+
+[x-cloak] {
+    display: none !important;
+}
