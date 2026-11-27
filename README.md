@@ -1,8 +1,35 @@
-# LAB Starter
+# NexOffice
 
-A Laravel starter with two roles (**admin** and **user**), email-activated accounts, a dashboard, a profile page, and an admin area for managing users. Built on the LAB stack conventions: **L**aravel + **A**lpine.js + Bootstrap 5.
+An office back-office system: **HR** today, with **payroll**, **accounting / finance** and **audit** planned next. Built on the LAB stack conventions (**L**aravel + **A**lpine.js + Bootstrap 5), starting from the LAB auth starter: two roles (**admin** and **user**), email-activated accounts, a dashboard, a profile page and user management.
 
-## Features
+## Modules
+
+| Module | Status |
+|--------|--------|
+| Accounts & users | Done |
+| HR: employees, departments, leave, attendance | Done |
+| Payroll | Planned |
+| Accounting / finance | Planned |
+| Audit trail | Planned |
+
+## HR features
+
+**Admins** (`/admin`)
+- **Employees**: search by name, email, number or job title; filter by department and status. Add, edit and delete. Each employee gets the next number (`EMP-0001`, …) unless you type one, and can be linked to a user login.
+- **Employee profile**: details, this year's leave balance, recent leave and recent attendance.
+- **Departments**: name, short code and description. Deleting one keeps its employees, without a department.
+- **Leave types**: days per calendar year (0 = no limit) and paid / unpaid. A type with requests cannot be deleted.
+- **Leave requests**: pending first. The review page shows the employee's balance and who else in the department is away on those days. Approve, or reject with a reason.
+- **Attendance**: any day's present / late / on leave / absent list and counts, filterable by department. Late means clocking in after `HR_WORK_START` (default `09:00`, see `config/hr.php`).
+- The dashboard shows active employees, who has clocked in, who is on leave today and leave waiting for review.
+
+**Employees** (users linked to an employee record)
+- **My leave**: balance per leave type, apply for leave, cancel a pending request, see the reviewer's note.
+  Only working days count (weekends are skipped). Requests that overlap other leave, go over the balance or cross the new year are refused.
+- **My attendance**: clock in and out once a day; the last 30 days.
+- Users without an employee record see a notice asking them to contact HR.
+
+## Account features
 
 **Every user**
 - Register with name, email, phone number (optional) and password.
@@ -27,7 +54,7 @@ A Laravel starter with two roles (**admin** and **user**), email-activated accou
 | Backend  | Laravel 13, PHP 8.3+ |
 | Frontend | Blade, Alpine.js 3, Bootstrap 5.3 (SCSS), Bootstrap Icons, Vite |
 | Database | MySQL 8 (or SQLite) |
-| Tests    | PHPUnit feature tests (34 tests) |
+| Tests    | PHPUnit feature tests |
 
 ## Requirements
 
@@ -68,10 +95,10 @@ php artisan key:generate
 
 ### 4. Create the database
 
-The default `.env` uses MySQL with a database called `lab_auth_starter` and user `root` with no password (the Laragon default).
+The default `.env` uses MySQL with a database called `nexoffice` and user `root` with no password (the Laragon default).
 
-- **Laragon / HeidiSQL:** open HeidiSQL, right-click your connection → *Create new* → *Database* → name it `lab_auth_starter` (collation `utf8mb4_unicode_ci`).
-- **Command line:** `mysql -u root -e "CREATE DATABASE lab_auth_starter CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"`
+- **Laragon / HeidiSQL:** open HeidiSQL, right-click your connection → *Create new* → *Database* → name it `nexoffice` (collation `utf8mb4_unicode_ci`).
+- **Command line:** `mysql -u root -e "CREATE DATABASE nexoffice CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"`
 
 If your MySQL user or password is different, edit `DB_USERNAME` and `DB_PASSWORD` in `.env`.
 
@@ -126,7 +153,7 @@ ADMIN_PASSWORD=password123
 php artisan migrate --seed
 ```
 
-This creates the tables and the admin account. When `APP_ENV=local` it also adds demo data: `user@example.com` / `password123` and 19 sample users, so the admin pages have something to show.
+This creates the tables, the admin account and the default leave types (annual, sick, emergency, unpaid). When `APP_ENV=local` it also adds demo data: `user@example.com` / `password123` and 19 sample users, plus 5 departments, about 25 employees, two weeks of attendance and some leave requests. The demo user is linked to an employee, so **My leave** and **My attendance** have data.
 
 ### 8. Build the frontend
 
